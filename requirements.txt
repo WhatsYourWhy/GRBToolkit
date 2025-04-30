@@ -1,0 +1,15 @@
+# GRBToolkit/requirements.txt
+
+# For running tests
+pytest
+
+# For formatting code (if using formatOnSave with autopep8)
+ 
+ autopep8
+
+ Common
+ matplotlib
+ pandas
+ numpy
+ requests
+ astropy
