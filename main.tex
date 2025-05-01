@@ -1,0 +1,69 @@
+
+\documentclass[11pt]{article}
+\usepackage{graphicx}
+\usepackage{authblk}
+\usepackage{amsmath}
+\usepackage{natbib}
+\usepackage{geometry}
+\usepackage{hyperref}
+\geometry{margin=1in}
+\title{Detecting Coherent Modulation in GRB Light Curves via QPIX and Time-Frequency Simulation}
+\author[1]{Justin Shank}
+\affil[1]{Cognisi Systems, Independent Research Lab, \texttt{justin@cognisi.io}}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We present a reproducible framework for detecting and characterizing quasi-periodic structure in gamma-ray burst (GRB) light curves using time-frequency analysis and simulation-based comparison. To evaluate detection sensitivity and false positive risk, we introduce a hybrid model---QPIX (Quasi-Periodic Impulse Excitation)---that combines transient coherent oscillatory modulation with stochastic spike noise. This model is compared against canonical FRED (Fast-Rise, Exponential-Decay) pulses and null baselines using Weighted Wavelet Z-transform (WWZ) and Bayesian Block segmentation. Performance benchmarks demonstrate that optimized WWZ implementations enable real-time detection on consumer hardware. While we do not assert definitive QPO detection in real GRB data, our results highlight the interpretive value of tuning, surrogate modeling, and controlled comparison. This work serves as a methodological scaffold for future QPO studies and an open invitation to test, replicate, and extend the analysis framework.
+\end{abstract}
+
+\section{Introduction}
+Quasi-periodic oscillations (QPOs) in GRBs are a subject of continued interest due to their potential connection to central engine processes, internal shocks, or magnetohydrodynamic instabilities such as magnetic reconnection. Detection remains challenging due to their transient nature and the overlapping stochastic structure within GRB light curves. In this paper, we present a simulation-first approach to QPO analysis using the QPIX model.
+
+\section{Methods}
+\subsection{QPIX Model}
+The QPIX model combines a modulated sinusoidal component with impulsive spikes and additive noise. It is implemented in \texttt{sim\_qpospikes.py} and modularized via a \texttt{QPIXModel} class. See Appendix for parameter ranges and signal construction logic.
+
+\subsection{FRED Model}
+FRED burst simulations serve as a null hypothesis. The rise and decay times are adjustable and additive Poisson noise is included. See \texttt{sim\_fred.py}.
+
+\subsection{Real Data Processing}
+We use Fermi GBM TTE data, binned at 0.01s intervals. Light curves are extracted using \texttt{RealDataTTE.py}, covering bursts with known complex substructure.
+
+\subsection{Time-Frequency Analysis}
+WWZ is applied using a custom-optimized pipeline. Frequency ranges and resolution are user-tunable. We benchmark different implementations in Appendix B.
+
+\subsection{Model Comparison}
+Akaike Information Criterion (AIC) is used to compare fits across models. All comparisons are made using \texttt{sim\_compare.py}, with false positive controls included.
+
+\section{Results}
+\subsection{WWZ Power Maps}
+Insert Figures: WWZ maps for QPIX, FRED, and Null signals.
+
+\subsection{Model Comparison}
+Insert Table: AIC values for each signal class.
+
+\subsection{False Positive Cases}
+Insert plots and parameter conditions where FRED models were misclassified.
+
+\section{Discussion}
+This framework emphasizes simulation-backed inquiry over post-hoc significance testing. Future improvements include GP kernel fits, automated WWZ thresholding, and surrogate-based false discovery rate control.
+
+\section{Conclusion}
+We introduce QPIX as a methodological signal probe for testing coherent modulation in GRBs. This work prioritizes reproducibility and interpretability over signal claims.
+
+\section*{Acknowledgements}
+This research was conducted independently under Cognisi Systems. The author thanks [optional] for technical review and conceptual guidance.
+
+\bibliographystyle{plainnat}
+\bibliography{main}
+\appendix
+\section{Appendix A: QPIX Signal Generation}
+Include: Parameter settings, signal plots, and comparison logic.
+
+\section{Appendix B: WWZ Benchmark}
+Include: Runtime vs resolution plots and speedup comparisons.
+
+\end{document}

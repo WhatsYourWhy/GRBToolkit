@@ -13,3 +13,5 @@ pytest
  numpy
  requests
  astropy
+ astropy.io.fits as fits
+ astropy.stats

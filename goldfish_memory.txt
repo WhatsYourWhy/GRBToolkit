@@ -1,0 +1,38 @@
+
+# 🐟 Goldfish Memory — Cognisi Signal Toolkit Command Reference
+
+## ✅ Core Simulations
+python run_qpix_sim.py         # Generate QPIX signal (modulator + spikes + noise)
+python run_fred_sim.py         # Generate FRED envelope signal
+python run_realdata_sim.py     # Load and plot real GRB CSV
+
+## 📊 Analysis Tools
+python run_bb_sweep.py         # Bayesian Block segmentation sweep over p0 priors
+python run_wwz_qpix.py         # Compute and plot WWZ map for QPIX
+python run_model_compare.py    # AIC comparison across QPIX, FRED, Real
+
+## 🛰 FITS Data Tools
+python tte_fits_to_csv.py      # Convert a single TTE .fits file to time-binned .csv
+python batch_convert_tte.py    # Convert ALL .fits files in /data/ to .csv
+
+## 📓 Logging & Utilities
+from logbook import log_run    # Append entry to logbook.csv after a run
+log_run(model="QPIX", seed=312, params="FREQ=0.41", output_csv="qpix_signal.csv")
+
+## 🤖 Full Pipeline Runner
+python run_pipeline.py --model qpix --wwz
+python run_pipeline.py --model fred --wwz
+python run_pipeline.py --model real --input_file data/grb090709A.csv --wwz
+
+## 📁 Output Files (All go to /outputs/)
+- qpix_signal.csv
+- fred_signal.csv
+- real_grb_signal.csv
+- wwz_qpix_matrix.csv
+- bb_sweep_*.csv
+- model_comparison_aic.csv
+- *.png (plots)
+- logbook.csv
+
+## 🧠 Tip:
+Run everything from the project root. Keep real GRB `.csv` or `.fits` in /data/.
