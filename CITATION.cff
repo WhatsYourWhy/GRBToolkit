@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+title: "GRBToolkit"
+message: "If you use this toolkit, please cite Cognisi Systems."
+authors:
+  - name: Cognisi Systems
+date-released: 2025-05-02
+license: MIT
+version: 1.0.0
+url: https://github.com/CognisiSystems/GRBToolkit

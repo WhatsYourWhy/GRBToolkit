@@ -1,4 +1,4 @@
-# _PythonProjectTemplate/main.py
+# GRBToolkit/main.py
 def main():
     print("Hello from main function!")
 

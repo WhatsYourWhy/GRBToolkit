@@ -33,7 +33,7 @@ grbtoolkit/
 │   ├── model_comparison_aic.csv
 │   └── *.png
 ├── data/
-│   └── grb090709A.csv        # Place additional GRB files here
+│   └── grb090709A.csv        grb170817A.csv
 ```
 
 ---
@@ -79,13 +79,13 @@ python run_model_compare.py
 
 If you use GRBToolkit, please cite:
 
-> Shank, J. *Detecting Coherent Modulation in GRB Light Curves via QPIX and Time-Frequency Simulation*. Cognisi Systems (2025). [https://cognisi.io](https://cognisi.io)
+> CogniSI Systems *Detecting Coherent Modulation in GRB Light Curves via QPIX and Time-Frequency Simulation*. Cognisi Systems (2025). [https://cognisi.io](https://cognisi.io)
 
 ---
 
 ## 👨‍🔬 Author
 
-**Justin Shank**  
+
 Cognisi Systems  
 [Justin@cognisi.io](mailto:Justin@cognisi.io)
 
