@@ -5,7 +5,8 @@ import pandas as pd
 def compute_aic(n_params, log_likelihood):
     return 2 * n_params - 2 * log_likelihood
 
-def compare_models(models, log_likelihoods, param_counts, labels):
+def compare_models(log_likelihoods, param_counts, labels):
+    """Return a dataframe of AIC scores sorted by lowest value."""
     results = []
     for label, logL, k in zip(labels, log_likelihoods, param_counts):
         aic = compute_aic(k, logL)
