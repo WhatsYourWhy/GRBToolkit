@@ -1,12 +1,5 @@
-# GRBToolkit/requirements.txt
-
-# For running tests
 pytest
-
-# For formatting code (if using formatOnSave with autopep8)
-
 autopep8
-
 matplotlib
 pandas
 numpy
