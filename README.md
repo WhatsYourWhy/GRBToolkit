@@ -1,5 +1,5 @@
 
-# GRBToolkit – Cognisi Systems
+# GRBToolkit – WhatsYourWhy
 
 **Pattern is memory. Noise is a dare.**
 
@@ -79,14 +79,14 @@ python run_model_compare.py
 
 If you use GRBToolkit, please cite:
 
-> CogniSI Systems *Detecting Coherent Modulation in GRB Light Curves via QPIX and Time-Frequency Simulation*. Cognisi Systems (2025). [https://cognisi.io](https://cognisi.io)
+> WhatsYourWhy *Detecting Coherent Modulation in GRB Light Curves via QPIX and Time-Frequency Simulation*. WhatsYourWhy (2025). [https://cognisi.io](https://cognisi.io)
 
 ---
 
 ## 👨‍🔬 Author
 
 
-Cognisi Systems  
+[WhatsYourWhy](https://whatsyourwhy.example.com)
 [Justin@cognisi.io](mailto:Justin@cognisi.io)
 
 ---

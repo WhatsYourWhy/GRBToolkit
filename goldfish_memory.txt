@@ -1,5 +1,5 @@
 
-# 🐟 Goldfish Memory — Cognisi Signal Toolkit Command Reference
+# 🐟 Goldfish Memory — WhatsYourWhy Signal Toolkit Command Reference
 
 ## ✅ Core Simulations
 python run_qpix_sim.py         # Generate QPIX signal (modulator + spikes + noise)
