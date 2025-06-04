@@ -4,14 +4,11 @@
 pytest
 
 # For formatting code (if using formatOnSave with autopep8)
- 
- autopep8
 
- Common
- matplotlib
- pandas
- numpy
- requests
- astropy
- astropy.io.fits as fits
- astropy.stats
+autopep8
+
+matplotlib
+pandas
+numpy
+requests
+astropy
