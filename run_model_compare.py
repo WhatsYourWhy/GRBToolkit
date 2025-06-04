@@ -34,7 +34,7 @@ params_real = 6
 labels = ['QPIX', 'FRED', 'Real']
 logLs = [ll_qpix, ll_fred, ll_real]
 params = [params_qpix, params_fred, params_real]
-df_aic = compare_models(logLs, params, logLs, labels)
+df_aic = compare_models(logLs, params, labels)
 
 df_aic.to_csv("outputs/model_comparison_aic.csv", index=False)
 print(df_aic)
