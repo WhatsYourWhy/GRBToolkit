@@ -1,4 +1,4 @@
-#GRBToolkit/tests/test_example.py
+# GRBToolkit/tests/test_example.py
 import pytest
 import sys
 import os
