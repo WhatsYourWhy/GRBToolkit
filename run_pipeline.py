@@ -17,13 +17,13 @@ def run_pipeline(model="qpix", input_file=None, run_bb=False, run_wwz=False, see
 
     # Generate or load signal
     if model == "qpix":
-        time, signal = generate_qpix_signal()
+        time, signal = generate_qpix_signal(seed=seed)
         output_csv = "outputs/qpix_signal.csv"
         pd.DataFrame({'time': time, 'signal': signal}).to_csv(output_csv, index=False)
         model_name = "QPIX"
         params = f"seed={seed}"
     elif model == "fred":
-        time, signal = generate_fred_signal()
+        time, signal = generate_fred_signal(seed=seed)
         output_csv = "outputs/fred_signal.csv"
         pd.DataFrame({'time': time, 'signal': signal}).to_csv(output_csv, index=False)
         model_name = "FRED"
