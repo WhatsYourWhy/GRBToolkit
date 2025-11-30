@@ -1,24 +1,33 @@
 # GRBToolkit/tests/test_example.py
-import pytest
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from aic_compare import compare_models
 
-def test_always_passes():
-    """
-    This is a basic placeholder test.
-    When you run tests, this one should always pass.
-    Replace this with real tests for your project's code.
-    """
-    assert True == True
+
+def test_compare_models_computes_expected_aic_and_order():
+    log_likelihoods = [-12.5, -10.0, -8.0]
+    param_counts = [2, 3, 1]
+    labels = ["ModelA", "ModelB", "ModelC"]
+
+    df = compare_models(log_likelihoods, param_counts, labels)
+
+    expected_aics = [29.0, 26.0, 18.0]
+    # Validate that AIC values are computed correctly for every model
+    assert sorted(df["AIC"].tolist()) == sorted(expected_aics)
+
+    # The models should be sorted from lowest to highest AIC
+    assert df["Model"].tolist() == ["ModelC", "ModelB", "ModelA"]
 
 
-def test_compare_models_basic():
-    logLs = [-10.0, -5.0]
-    params = [3, 2]
-    labels = ["A", "B"]
-    df = compare_models(logLs, params, labels)
-    # Model B should have the lowest AIC and appear first
-    assert df.iloc[0]["Model"] == "B"
+def test_compare_models_handles_tied_log_likelihoods():
+    log_likelihoods = [-7.0, -7.0]
+    param_counts = [1, 3]
+    labels = ["FewParams", "ManyParams"]
 
+    df = compare_models(log_likelihoods, param_counts, labels)
+
+    expected_aics = [16.0, 20.0]
+    assert df["AIC"].tolist() == expected_aics
+    assert df["Model"].tolist() == ["FewParams", "ManyParams"]
