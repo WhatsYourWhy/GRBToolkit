@@ -33,7 +33,8 @@ grbtoolkit/
 │   ├── model_comparison_aic.csv
 │   └── *.png
 ├── data/
-│   └── grb090709A.csv        grb170817A.csv
+│   ├── grb090709A.csv
+│   └── grb170817A.csv
 ```
 
 ---
