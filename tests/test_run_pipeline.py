@@ -1,5 +1,8 @@
 import os
+import shutil
+
 import pandas as pd
+
 from run_pipeline import run_pipeline
 
 
@@ -15,5 +18,25 @@ def test_run_pipeline_real(tmp_path):
         assert os.path.exists(output_file)
     finally:
         if os.path.exists('outputs'):
-            import shutil
             shutil.rmtree('outputs')
+
+
+def test_run_pipeline_seed_propagation(tmp_path):
+    original_cwd = os.getcwd()
+    os.chdir(tmp_path)
+    try:
+        run_pipeline(model='qpix', run_wwz=False, seed=111)
+        first = pd.read_csv('outputs/qpix_signal.csv')['signal'].to_numpy()
+
+        run_pipeline(model='qpix', run_wwz=False, seed=222)
+        second = pd.read_csv('outputs/qpix_signal.csv')['signal'].to_numpy()
+
+        run_pipeline(model='qpix', run_wwz=False, seed=111)
+        third = pd.read_csv('outputs/qpix_signal.csv')['signal'].to_numpy()
+    finally:
+        if os.path.exists('outputs'):
+            shutil.rmtree('outputs')
+        os.chdir(original_cwd)
+
+    assert not (first == second).all()
+    assert (first == third).all()

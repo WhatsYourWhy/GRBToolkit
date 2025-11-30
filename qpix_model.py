@@ -2,8 +2,9 @@
 import numpy as np
 from config import SIM_T_START, SIM_T_STOP, SIM_DT, SIM_SEED, QPO_FREQ, QPO_PHI, QPO_MOD_AMP, N_SPIKES, SPIKE_AMP_RANGE, SPIKE_WIDTH, BG_RATE
 
-def generate_qpix_signal():
-    rng = np.random.default_rng(SIM_SEED)
+
+def generate_qpix_signal(seed: int = SIM_SEED):
+    rng = np.random.default_rng(seed)
     time = np.arange(SIM_T_START, SIM_T_STOP, SIM_DT)
     modulator = QPO_MOD_AMP * np.cos(2 * np.pi * QPO_FREQ * time + QPO_PHI)
 

@@ -8,8 +8,8 @@ FRED_T0 = 0.5
 FRED_TAU = 1.2
 FRED_TAUR = 0.11
 
-def generate_fred_signal():
-    rng = np.random.default_rng(SIM_SEED)
+def generate_fred_signal(seed: int = SIM_SEED):
+    rng = np.random.default_rng(seed)
     time = np.arange(SIM_T_START, SIM_T_STOP, SIM_DT)
     fred = FRED_A * np.exp(-(time - FRED_T0) / FRED_TAU) * (1 - np.exp(-(time - FRED_T0) / FRED_TAUR))
     fred[time < FRED_T0] = 0.0  # Enforce zero before pulse onset
