@@ -6,6 +6,9 @@ from datetime import datetime
 LOGBOOK_PATH = "outputs/logbook.csv"
 
 def log_run(model, seed, params, output_csv, segments=None, notes=""):
+    directory = os.path.dirname(LOGBOOK_PATH)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
     log_exists = os.path.exists(LOGBOOK_PATH)
     with open(LOGBOOK_PATH, mode='a', newline='') as file:
         writer = csv.writer(file)
