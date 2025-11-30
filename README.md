@@ -42,9 +42,13 @@ grbtoolkit/
 ## 🚀 Usage Instructions
 
 ### 1. Clone the repo and install requirements
+Install from `requirements.txt` to keep the runtime and optional tooling in sync:
+
 ```bash
-pip install numpy pandas matplotlib astropy
+pip install -r requirements.txt
 ```
+
+The file includes `numpy`, `pandas`, `matplotlib`, `astropy`, and `requests` for core usage, plus `pytest` and `autopep8` for testing and formatting.
 
 ### 2. Run a synthetic model
 ```bash
