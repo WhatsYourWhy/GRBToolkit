@@ -170,3 +170,21 @@ python run_detector_variants.py
 - Decision log: `docs/sprint3_decision_log.md`
 - Sprint 4 ranked follow-up plan: `docs/sprint4_candidate_experiments.md`
 - Paper detector subsection updated in: `paper/grb_substructure_v2.md`
+
+### Sprint 4 Item 1 Run (Window + Band Optimization)
+
+```bash
+cd /mnt/c/Users/Justin/GRBToolkit
+source .venv/bin/activate
+python run_sprint4_window_band.py
+```
+
+### Sprint 4 Item 1 Artifacts
+
+- Candidate summary CSV: `outputs/sprint4_window_band/candidate_summary.csv`
+- Best candidate CSV: `outputs/sprint4_window_band/best_candidate.csv`
+- Candidate run-level CSVs: `outputs/sprint4_window_band/run_level_C*.csv`
+- Candidate summary CSVs: `outputs/sprint4_window_band/summary_C*.csv`
+- Score heatmap: `figures/sprint4_window_band_score.png`
+- Target TPR/FPR plot: `figures/sprint4_window_band_tpr_fpr.png`
+- Run log: `docs/sprint4_window_band_log.md`
