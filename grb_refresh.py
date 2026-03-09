@@ -86,6 +86,8 @@ class BenchmarkConfig:
     freq_band_min: float = 0.35
     freq_band_max: float = 0.45
     window_padding_s: float = 10.0
+    detector_variant: str = "windowed_fft_sig"
+    detrend_order: int = 1
 
 
 def _coerce_params(params: SimulationParams | Mapping[str, object]) -> SimulationParams:

@@ -150,3 +150,23 @@ python run_rigor_benchmark.py
 - Knot stability plot: `figures/knot_stability.png`
 - P-value distribution plot: `figures/pvalue_distribution.png`
 - Paper supplement section updated in: `paper/grb_substructure_v2.md`
+
+### Sprint 3 Detector Variant Run
+
+```bash
+cd /mnt/c/Users/Justin/GRBToolkit
+source .venv/bin/activate
+python run_detector_variants.py
+```
+
+### Sprint 3 Artifacts
+
+- Variant run CSVs: `outputs/detector_variants/run_level_global_tapered_fft_sig.csv`, `outputs/detector_variants/run_level_windowed_fft_sig.csv`, `outputs/detector_variants/run_level_detrended_fft_sig.csv`
+- Variant summary CSVs: `outputs/detector_variants/summary_global_tapered_fft_sig.csv`, `outputs/detector_variants/summary_windowed_fft_sig.csv`, `outputs/detector_variants/summary_detrended_fft_sig.csv`
+- Variant comparison CSV: `outputs/detector_variants/variant_comparison.csv`
+- Best-variant selector CSV: `outputs/detector_variants/best_variant_selector.csv`
+- Tradeoff figure: `figures/variant_tpr_fpr_tradeoff.png`
+- ROC-like scenario grid: `figures/variant_roc_like_grid.png`
+- Decision log: `docs/sprint3_decision_log.md`
+- Sprint 4 ranked follow-up plan: `docs/sprint4_candidate_experiments.md`
+- Paper detector subsection updated in: `paper/grb_substructure_v2.md`

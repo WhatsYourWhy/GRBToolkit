@@ -25,6 +25,12 @@ from grb_refresh import (
     summarize_rigor_results,
 )
 
+VALID_DETECTOR_VARIANTS = (
+    "global_tapered_fft_sig",
+    "windowed_fft_sig",
+    "detrended_fft_sig",
+)
+
 
 def _parse_float_list(raw: str) -> list[float]:
     return [float(item.strip()) for item in raw.split(",") if item.strip()]
@@ -119,6 +125,32 @@ def _compute_significance_for_series(
 
     p_value = estimate_surrogate_p_value(peak_power_obs, surrogate_peaks)
     return peak_power_obs, peak_freq_obs, p_value
+
+
+def _detrend_signal(counts: np.ndarray, dt: float, order: int) -> np.ndarray:
+    arr = np.asarray(counts, dtype=np.float64)
+    if arr.size < max(8, order + 4):
+        return arr.copy()
+    if int(order) < 1:
+        return arr.copy()
+
+    x = np.arange(arr.size, dtype=np.float64) * float(dt)
+    try:
+        coeffs = np.polyfit(x, arr, deg=int(order))
+        trend = np.polyval(coeffs, x)
+    except (np.linalg.LinAlgError, ValueError):
+        trend = np.mean(arr) * np.ones_like(arr)
+
+    detrended = arr - trend
+    if np.allclose(detrended, 0.0):
+        return arr - np.mean(arr)
+    return detrended
+
+
+def _validate_detector_variant(variant: str) -> None:
+    if variant not in VALID_DETECTOR_VARIANTS:
+        allowed = ", ".join(VALID_DETECTOR_VARIANTS)
+        raise ValueError(f"Unknown detector_variant '{variant}'. Allowed values: {allowed}")
 
 
 def _format_markdown_table(df: pd.DataFrame) -> str:
@@ -294,9 +326,11 @@ def run_rigor_benchmark(
     scenario_map: Mapping[str, object] | None = None,
     max_points_for_bb: int = 2000,
     max_points_for_sig: int = 4096,
+    update_paper: bool = True,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     if scenario_map is None:
         scenario_map = get_default_scenarios()
+    _validate_detector_variant(config.detector_variant)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     figures_dir.mkdir(parents=True, exist_ok=True)
@@ -345,8 +379,16 @@ def run_rigor_benchmark(
 
                     t_sig_global, counts_sig_global = _downsample_for_sig(t, counts, max_points=max_points_for_sig)
                     dt_global = float(np.median(np.diff(t_sig_global))) if t_sig_global.size > 1 else float(params.dt)
+                    sig_counts_global = counts_sig_global.astype(np.float64)
+                    if config.detector_variant == "detrended_fft_sig":
+                        sig_counts_global = _detrend_signal(
+                            sig_counts_global,
+                            dt=dt_global,
+                            order=int(config.detrend_order),
+                        )
+
                     global_peak, global_peak_freq, global_p_value = _compute_significance_for_series(
-                        counts=counts_sig_global,
+                        counts=sig_counts_global,
                         dt=dt_global,
                         fmin=float(config.freq_band_min),
                         fmax=float(config.freq_band_max),
@@ -367,8 +409,15 @@ def run_rigor_benchmark(
                         max_points=max_points_for_sig,
                     )
                     dt_window = float(np.median(np.diff(t_sig_window))) if t_sig_window.size > 1 else float(params.dt)
+                    sig_counts_window = counts_sig_window.astype(np.float64)
+                    if config.detector_variant == "detrended_fft_sig":
+                        sig_counts_window = _detrend_signal(
+                            sig_counts_window,
+                            dt=dt_window,
+                            order=int(config.detrend_order),
+                        )
                     window_peak, window_peak_freq, window_p_value = _compute_significance_for_series(
-                        counts=counts_sig_window,
+                        counts=sig_counts_window,
                         dt=dt_window,
                         fmin=float(config.freq_band_min),
                         fmax=float(config.freq_band_max),
@@ -377,7 +426,12 @@ def run_rigor_benchmark(
                     )
 
                     transient_mode = params.qpo_window_start is not None and params.qpo_window_end is not None
-                    if transient_mode:
+                    if config.detector_variant == "global_tapered_fft_sig":
+                        detection_mode = "global"
+                        peak_power_obs = global_peak
+                        peak_freq_obs = global_peak_freq
+                        p_value = global_p_value
+                    elif transient_mode:
                         detection_mode = "windowed"
                         peak_power_obs = window_peak
                         peak_freq_obs = window_peak_freq
@@ -415,6 +469,8 @@ def run_rigor_benchmark(
                             "detection_mode": detection_mode,
                             "p_value_global": float(global_p_value) if np.isfinite(global_p_value) else np.nan,
                             "p_value_window": float(window_p_value) if np.isfinite(window_p_value) else np.nan,
+                            "detector_variant": str(config.detector_variant),
+                            "detrend_order": int(config.detrend_order),
                         }
                     )
 
@@ -438,9 +494,13 @@ def run_rigor_benchmark(
             "detection_mode",
             "p_value_global",
             "p_value_window",
+            "detector_variant",
+            "detrend_order",
         ]
     ]
     summary_df = summarize_rigor_results(run_df)
+    summary_df["detector_variant"] = str(config.detector_variant)
+    summary_df["detrend_order"] = int(config.detrend_order)
 
     run_csv = output_dir / "run_level_results.csv"
     summary_csv = output_dir / "recovery_summary.csv"
@@ -456,14 +516,18 @@ def run_rigor_benchmark(
     _plot_knot_stability(summary_df, knot_png)
     _plot_pvalue_distribution(run_df, pvalue_png)
 
-    section = _build_benchmark_section(summary_df)
-    _upsert_benchmark_section(paper_path, section)
+    if update_paper:
+        section = _build_benchmark_section(summary_df)
+        _upsert_benchmark_section(paper_path, section)
 
     print("[rigor-benchmark] complete")
     print(f"[rigor-benchmark] run-level: {run_csv}")
     print(f"[rigor-benchmark] summary: {summary_csv}")
     print(f"[rigor-benchmark] figures: {recovery_png}, {fpr_png}, {knot_png}, {pvalue_png}")
-    print(f"[rigor-benchmark] paper updated: {paper_path}")
+    if update_paper:
+        print(f"[rigor-benchmark] paper updated: {paper_path}")
+    else:
+        print("[rigor-benchmark] paper update skipped")
 
     return run_df, summary_df
 
@@ -484,8 +548,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--freq-band-min", type=float, default=0.35)
     parser.add_argument("--freq-band-max", type=float, default=0.45)
     parser.add_argument("--window-padding-s", type=float, default=10.0)
+    parser.add_argument("--detector-variant", default="windowed_fft_sig", choices=list(VALID_DETECTOR_VARIANTS))
+    parser.add_argument("--detrend-order", type=int, default=1)
     parser.add_argument("--max-points-for-bb", type=int, default=2000)
     parser.add_argument("--max-points-for-sig", type=int, default=4096)
+    parser.add_argument("--skip-paper-update", action="store_true")
     return parser.parse_args()
 
 
@@ -503,6 +570,8 @@ if __name__ == "__main__":
         freq_band_min=args.freq_band_min,
         freq_band_max=args.freq_band_max,
         window_padding_s=args.window_padding_s,
+        detector_variant=args.detector_variant,
+        detrend_order=args.detrend_order,
     )
     run_rigor_benchmark(
         config=cfg,
@@ -511,4 +580,5 @@ if __name__ == "__main__":
         paper_path=Path(args.paper_path),
         max_points_for_bb=args.max_points_for_bb,
         max_points_for_sig=args.max_points_for_sig,
+        update_paper=not args.skip_paper_update,
     )

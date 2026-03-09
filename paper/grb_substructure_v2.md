@@ -1,7 +1,7 @@
 # Gamma-Ray Burst Substructure: A QPO-Driven Model with Adaptive Bayesian Blocks and Jet Dynamics
 
 ## Abstract
-We present a corrected simulation and recovery workflow for GRB temporal substructure using a hybrid flux model: a FRED pulse envelope multiplied by QPO modulation, plus additive spike transients and background. The previous derivative-as-rate bug was removed, and all synthetic scenarios were regenerated from the corrected rate model. Across short, weak, mid, and BOAT-like cases, adaptive Bayesian Blocks recover rich knot structure and resolve the injected 0.41 Hz band in the recomputed signals. We report refreshed knot counts, residual comparisons against FRED-only baselines, and a model-selection snapshot with AIC.
+We present a corrected simulation and recovery workflow for GRB temporal substructure using a hybrid flux model: a FRED pulse envelope multiplied by QPO modulation, plus additive spike transients and background. The previous derivative-as-rate bug was removed, and all synthetic scenarios were regenerated from the corrected rate model. We then benchmarked significance-calibrated detection (phase-randomized surrogates, `alpha=0.05`) across three detector variants on a fixed injection grid. The full balanced Sprint 3 run (March 9, 2026; `n=40`, `B=0.0-0.4`, `p0_scale=0.5/1.0/2.0`, `n_surrogates=200`) did not pass the predefined balanced acceptance bar for `mid` and `boat_drift`, so current claims are limited to methods calibration and reproducibility, not observational QPO confirmation.
 
 ## 1. Model
 The corrected photon-rate model is:
@@ -59,7 +59,16 @@ AIC snapshot for one representative burst (BOAT drift):
 - `../figures/bb_sensitivity.png`
 
 ## 6. Conclusions
-The corrected simulation confirms that adaptive Bayesian Blocks can recover injected substructure under a physically consistent flux-rate model. Relative to FRED-only baselines, the hybrid model yields stronger structural recovery and improved residual behavior across the tested classes. The BOAT prior sweep indicates that segmentation density is sensitive but stable over a practical adaptive range. Next-stage work should add WWZ significance contours and real-TTE validation to test whether recovered QPO signatures are present in observed bursts.
+This project now has a reproducible, corrected simulation baseline and a transparent significance-calibration framework, but the current detector family is not yet sufficient for strong positive recovery claims in the hardest target regimes. In the full balanced Sprint 3 benchmark, none of the evaluated variants met the pre-registered acceptance bar (`TPR_sig >= 0.6` at `B>=0.2` with `FPR_sig <= 0.1` at `B=0`) for `mid` and `boat_drift`. The most defensible interpretation is therefore a negative/mixed methods result: calibration appears controlled, sensitivity remains limited, and further detector development should be treated as an open methods problem rather than evidence of astrophysical QPO existence. Immediate next work is a focused Sprint 4 sequence that prioritizes sensitivity gains while explicitly protecting false-positive calibration.
+
+## 7. Sprint 4 Candidate Experiments (Prioritized)
+| Rank | Experiment | Expected TPR Gain | FPR Risk | Priority Rationale | Immediate Success Check |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Window-and-band optimization on injection grid (fixed surrogate null) | High | Low-Medium | Biggest near-term leverage without changing null calibration model | `mid` or `boat_drift` reaches `TPR_sig >= 0.2` while `FPR_sig <= 0.1` |
+| 2 | Multi-taper or Welch-style peak statistic under same surrogate test | Medium-High | Low-Medium | Reduces single-FFT variance and should improve peak stability | Improve target-group `TPR_sig - FPR_sig` vs current baseline |
+| 3 | Transient-focused tiled windows with multiple-testing correction | Medium | Medium | Better match for nonstationary injections, especially `boat_transient` | `boat_transient` TPR increases without crossing `FPR_sig > 0.1` |
+| 4 | Detrend model sweep (order/robust fit) with strict holdout seeds | Medium | Medium | Current detrend path helps little in targets; may need better trend removal | Target scenarios improve over current detrended variant by >=0.05 TPR |
+| 5 | Real-data bridge pilot (limited TTE subset, methods claim only) | Low (simulation TPR) / High (external validity) | Medium | Validates portability and failure modes before broader claims | Complete pilot with calibrated p-value report and no claim inflation |
 
 ## Data Artifacts
 - Metrics CSV: `outputs/core_refresh/scenario_metrics.csv`
@@ -106,6 +115,43 @@ This benchmark quantifies recovery behavior under controlled injections and expl
 - `../figures/pvalue_distribution.png`
 
 This section is methods validation only and should not be interpreted as direct observational proof of QPO existence in real bursts.
+<!-- DETECTOR_VARIANT_SECTION_START -->
+### Detector Variant Comparison
+We evaluated three significance-calibrated detector variants under a shared surrogate framework: global tapered FFT, transient-window FFT, and detrended FFT. Pass/fail was pre-registered using a balanced bar for `mid` and `boat_drift`: `TPR_sig >= 0.6` at `B>=0.2` and `FPR_sig <= 0.1` at `B=0`.
+
+Sprint 3 outcome: **FAIL**
+
+| detector_variant | scenario | TPR_sig | FPR_sig | delta_tpr_vs_baseline | delta_fpr_vs_baseline | passes_balanced_bar |
+| --- | --- | --- | --- | --- | --- | --- |
+| detrended_fft_sig | boat_drift | 0.0000 | 0.0000 | 0.0000 | -0.0083 | False |
+| detrended_fft_sig | mid | 0.0000 | 0.0000 | 0.0000 | 0.0000 | False |
+| global_tapered_fft_sig | boat_drift | 0.0000 | 0.0083 | 0.0000 | 0.0000 | False |
+| global_tapered_fft_sig | mid | 0.0000 | 0.0000 | 0.0000 | 0.0000 | False |
+| windowed_fft_sig | boat_drift | 0.0000 | 0.0083 | 0.0000 | 0.0000 | False |
+| windowed_fft_sig | mid | 0.0000 | 0.0000 | 0.0000 | 0.0000 | False |
+
+Best-Variant Selector:
+
+| selector_scope | selector_key | best_detector_variant | TPR_sig | FPR_sig | score_tpr_minus_fpr | passes_balanced_bar |
+| --- | --- | --- | --- | --- | --- | --- |
+| scenario | boat_drift | detrended_fft_sig | 0.0000 | 0.0000 | 0.0000 | False |
+| scenario | boat_transient | global_tapered_fft_sig | 0.0556 | 0.0083 | 0.0472 | False |
+| scenario | mid | detrended_fft_sig | 0.0000 | 0.0000 | 0.0000 | False |
+| scenario | short_100 | detrended_fft_sig | 0.0806 | 0.0750 | 0.0056 | False |
+| scenario | short_70 | global_tapered_fft_sig | 0.0083 | 0.0000 | 0.0083 | False |
+| scenario | weak | global_tapered_fft_sig | 0.0083 | 0.0000 | 0.0083 | False |
+| target_group | mid+boat_drift | detrended_fft_sig | 0.0000 | 0.0000 | 0.0000 | False |
+
+Artifacts:
+- `outputs/detector_variants/variant_comparison.csv`
+- `outputs/detector_variants/best_variant_selector.csv`
+- `../figures/variant_tpr_fpr_tradeoff.png`
+- `../figures/variant_roc_like_grid.png`
+
+Interpretation is conservative: this remains methods validation and calibration, not observational proof of astrophysical QPO existence.
+<!-- DETECTOR_VARIANT_SECTION_END -->
+
+
 <!-- BENCHMARK_SECTION_END -->
 
 
