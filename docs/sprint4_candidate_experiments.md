@@ -25,3 +25,14 @@ Recover meaningful true positives while keeping significance-calibrated false po
   - `outputs/detector_variants/variant_comparison.csv`
   - `outputs/detector_variants/best_variant_selector.csv`
   - `docs/sprint3_decision_log.md`
+
+## Item 1 Status (March 9, 2026)
+- Full Item 1 sweep completed with `n_replicates=40` and `n_surrogates=200` across:
+  - Bands: `0.30-0.40`, `0.35-0.45`, `0.38-0.48`
+  - Window padding: `5s`, `10s`, `20s`
+- Result: no target-group TPR lift (`delta TPR = 0.0` vs baseline) and no balanced-bar passes.
+- Decision: move to Item 2 (multi-taper/Welch statistic) as the next logical experiment.
+- Artifacts:
+  - `outputs/sprint4_window_band/candidate_summary.csv`
+  - `outputs/sprint4_window_band/best_candidate.csv`
+  - `docs/sprint4_window_band_log.md`
