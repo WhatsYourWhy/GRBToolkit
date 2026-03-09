@@ -66,6 +66,23 @@ class ScenarioResult:
     f0_est: float
 
 
+@dataclass(frozen=True)
+class BenchmarkConfig:
+    scenario_names: Sequence[str] = (
+        "short_70",
+        "short_100",
+        "weak",
+        "mid",
+        "boat_drift",
+        "boat_transient",
+    )
+    b_grid: Sequence[float] = (0.0, 0.1, 0.2, 0.3, 0.4)
+    p0_scale_grid: Sequence[float] = (0.5, 1.0, 2.0)
+    n_replicates: int = 40
+    freq_tolerance_hz: float = 0.02
+    seed_start: int = 100000
+
+
 def _coerce_params(params: SimulationParams | Mapping[str, object]) -> SimulationParams:
     if isinstance(params, SimulationParams):
         return params
@@ -345,6 +362,65 @@ def simulate_light_curve(
 
 def adaptive_p0(mean_rate: float) -> float:
     return float(0.02 * np.exp(-0.00008 * mean_rate) * 0.95)
+
+
+def detect_qpo_signal(f0_est: float, target_f0: float, tolerance_hz: float) -> bool:
+    if not np.isfinite(f0_est):
+        return False
+    return bool(abs(float(f0_est) - float(target_f0)) <= float(tolerance_hz))
+
+
+def summarize_rigor_results(run_df: pd.DataFrame) -> pd.DataFrame:
+    if run_df.empty:
+        columns = [
+            "scenario",
+            "B",
+            "p0_scale",
+            "n_runs",
+            "recovery_rate",
+            "false_positive_rate",
+            "median_knots",
+            "iqr_knots",
+            "median_edge_pct",
+            "median_residual_gain_pct",
+        ]
+        return pd.DataFrame(columns=columns)
+
+    work_df = run_df.copy()
+    if "residual_gain_pct" not in work_df.columns:
+        denom = work_df["residual_fred"].replace(0.0, np.nan)
+        work_df["residual_gain_pct"] = ((work_df["residual_fred"] - work_df["residual_qpo"]) / denom) * 100.0
+
+    grouped = work_df.groupby(["scenario", "B", "p0_scale"], dropna=False)
+    summary = grouped.agg(
+        n_runs=("detected", "count"),
+        recovery_rate=("detected", "mean"),
+        median_knots=("knots", "median"),
+        median_edge_pct=("edge_pct", "median"),
+        median_residual_gain_pct=("residual_gain_pct", "median"),
+    ).reset_index()
+
+    q1 = grouped["knots"].quantile(0.25).rename("knots_q1")
+    q3 = grouped["knots"].quantile(0.75).rename("knots_q3")
+    iqr_df = pd.concat([q1, q3], axis=1).reset_index()
+    iqr_df["iqr_knots"] = iqr_df["knots_q3"] - iqr_df["knots_q1"]
+    summary = summary.merge(iqr_df[["scenario", "B", "p0_scale", "iqr_knots"]], on=["scenario", "B", "p0_scale"])
+
+    summary["false_positive_rate"] = np.where(summary["B"] == 0.0, summary["recovery_rate"], np.nan)
+    return summary[
+        [
+            "scenario",
+            "B",
+            "p0_scale",
+            "n_runs",
+            "recovery_rate",
+            "false_positive_rate",
+            "median_knots",
+            "iqr_knots",
+            "median_edge_pct",
+            "median_residual_gain_pct",
+        ]
+    ].sort_values(["scenario", "B", "p0_scale"]).reset_index(drop=True)
 
 
 def compute_knots(t: np.ndarray, counts: np.ndarray, p0: float) -> tuple[np.ndarray, int]:
