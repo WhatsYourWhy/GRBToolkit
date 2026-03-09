@@ -99,3 +99,36 @@ If you use GRBToolkit, please cite:
 ## 🛠 Status
 
 This toolkit is active and evolving. Feedback, replication, and respectful critique are welcome.
+
+---
+
+## Core Paper Refresh (Corrected Flux Model)
+
+Use the new flux-rate refresh pipeline to regenerate paper artifacts from the corrected model (`F(t)` sampled by Poisson, not `dF/dt`).
+
+### WSL Virtualenv Setup
+
+```bash
+cd /mnt/c/Users/Justin/GRBToolkit
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+### One-Command Refresh Run
+
+```bash
+cd /mnt/c/Users/Justin/GRBToolkit
+source .venv/bin/activate
+python run_core_refresh.py
+```
+
+### Generated Artifacts
+
+- Figures: `figures/short_70.png`, `figures/short_100.png`, `figures/weak.png`, `figures/mid.png`, `figures/boat_drift.png`, `figures/boat_transient.png`, `figures/bb_sensitivity.png`
+- Metrics CSV: `outputs/core_refresh/scenario_metrics.csv`
+- Table source CSV: `outputs/core_refresh/table1_source.csv`
+- AIC CSV: `outputs/core_refresh/aic_comparison.csv`
+- BB sensitivity CSV: `outputs/core_refresh/bb_sensitivity_boat.csv`
+- Paper draft: `paper/grb_substructure_v2.md`
