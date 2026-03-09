@@ -132,3 +132,20 @@ python run_core_refresh.py
 - AIC CSV: `outputs/core_refresh/aic_comparison.csv`
 - BB sensitivity CSV: `outputs/core_refresh/bb_sensitivity_boat.csv`
 - Paper draft: `paper/grb_substructure_v2.md`
+
+### Rigor Benchmark Run
+
+```bash
+cd /mnt/c/Users/Justin/GRBToolkit
+source .venv/bin/activate
+python run_rigor_benchmark.py
+```
+
+### Rigor Benchmark Artifacts
+
+- Run-level CSV: `outputs/rigor_benchmark/run_level_results.csv`
+- Summary CSV: `outputs/rigor_benchmark/recovery_summary.csv`
+- Recovery heatmap: `figures/recovery_heatmap.png`
+- False-positive plot: `figures/fpr_vs_p0.png`
+- Knot stability plot: `figures/knot_stability.png`
+- Paper supplement section updated in: `paper/grb_substructure_v2.md`
