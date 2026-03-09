@@ -1,0 +1,72 @@
+# Gamma-Ray Burst Substructure: A QPO-Driven Model with Adaptive Bayesian Blocks and Jet Dynamics
+
+## Abstract
+We present a corrected simulation and recovery workflow for GRB temporal substructure using a hybrid flux model: a FRED pulse envelope multiplied by QPO modulation, plus additive spike transients and background. The previous derivative-as-rate bug was removed, and all synthetic scenarios were regenerated from the corrected rate model. Across short, weak, mid, and BOAT-like cases, adaptive Bayesian Blocks recover rich knot structure and resolve the injected 0.41 Hz band in the recomputed signals. We report refreshed knot counts, residual comparisons against FRED-only baselines, and a model-selection snapshot with AIC.
+
+## 1. Model
+The corrected photon-rate model is:
+
+\[
+F(t) = A e^{-(t-t_0)/\tau} \left(1 - e^{-(t-t_0)/\tau_r}\right)
+\times \left[1 + B \cos\left(2\pi f_{\mathrm{QPO}} t + \phi\right)\right]
++ S_{\mathrm{spikes}}(t) + R_{\mathrm{bg}}
+\]
+
+Counts are sampled as:
+
+\[
+C(t) \sim \mathrm{Poisson}\left(F(t)\,\Delta t\right)
+\]
+
+This draft explicitly uses flux rate \(F(t)\), not \(dF/dt\), as the Poisson intensity.
+
+## 2. Recovery-Test Results (Corrected Simulation)
+Table 1 is generated from `run_core_refresh.py` outputs.
+
+| GRB Type | Knots | Residual QPO | Residual FRED | FRED Knots | Edge (%) | f0 (Hz) | p0 | seed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Short 70 | 3 | 370.7044 | 399.1322 | 3 | 0.0000 | 0.4100 | 0.0179 | 17070 |
+| Short 100 | 4 | 416.0669 | 480.6622 | 3 | 33.3300 | 0.4100 | 0.0178 | 17100 |
+| Weak | 3 | 163.8950 | 165.5218 | 3 | 0.0000 | 0.4000 | 0.0186 | 17200 |
+| Mid | 48 | 185.6391 | 318.0615 | 20 | 140.0000 | 0.4100 | 0.0165 | 17300 |
+| BOAT Drift | 1996 | 271.3523 | 4048.2894 | 73 | 2634.2500 | 0.4120 | 0.0104 | 17400 |
+| BOAT Transient | 1801 | 264.1373 | 3135.6183 | 71 | 2436.6200 | 0.4080 | 0.0109 | 17500 |
+
+## 3. Adaptive BB Prior Sensitivity
+We evaluated BOAT sensitivity by sweeping \(p_0\) around the adaptive baseline
+\(p_0 = 0.02 \times e^{-0.00008\,\mathrm{Rate}} \times 0.95\) and recording knot counts.
+Artifacts:
+
+- Sensitivity CSV: `outputs/core_refresh/bb_sensitivity_boat.csv`
+- Sensitivity Figure: `../figures/bb_sensitivity.png`
+
+## 4. AIC Comparison
+AIC snapshot for one representative burst (BOAT drift):
+
+| model | log_likelihood | n_params | aic | delta_aic |
+| --- | --- | --- | --- | --- |
+| FRED+QPO+Spikes | 22608819.3552 | 10 | -45217618.7103 | 0.0000 |
+| FRED+QPO | 21381608.8813 | 8 | -42763201.7626 | 2454416.9477 |
+| FRED | 21360293.9660 | 5 | -42720577.9320 | 2497040.7783 |
+
+## 5. Figures
+- `../figures/short_70.png`
+- `../figures/short_100.png`
+- `../figures/weak.png`
+- `../figures/mid.png`
+- `../figures/boat_drift.png`
+- `../figures/boat_transient.png`
+- `../figures/bb_sensitivity.png`
+
+## 6. Conclusions
+The corrected simulation confirms that adaptive Bayesian Blocks can recover injected substructure under a physically consistent flux-rate model. Relative to FRED-only baselines, the hybrid model yields stronger structural recovery and improved residual behavior across the tested classes. The BOAT prior sweep indicates that segmentation density is sensitive but stable over a practical adaptive range. Next-stage work should add WWZ significance contours and real-TTE validation to test whether recovered QPO signatures are present in observed bursts.
+
+## Data Artifacts
+- Metrics CSV: `outputs/core_refresh/scenario_metrics.csv`
+- Table 1 CSV: `outputs/core_refresh/table1_source.csv`
+- AIC CSV: `outputs/core_refresh/aic_comparison.csv`
+
+## References
+- Chattopadhyay, T., Misra, R., & Bhattacharyya, S. (2022). *The Astrophysical Journal*, 935, 157. https://doi.org/10.3847/1538-4357/ac7d5a
+- Kumar, P., & Zhang, B. (2015). *Physics Reports*, 561, 1-109. https://doi.org/10.1016/j.physrep.2014.09.008
+- Scargle, J. D., Norris, J. P., Jackson, B., & Chiang, J. (2013). *The Astrophysical Journal*, 764, 167. https://doi.org/10.1088/0004-637X/764/2/167
