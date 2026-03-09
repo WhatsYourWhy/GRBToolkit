@@ -81,6 +81,11 @@ class BenchmarkConfig:
     n_replicates: int = 40
     freq_tolerance_hz: float = 0.02
     seed_start: int = 100000
+    n_surrogates: int = 200
+    alpha: float = 0.05
+    freq_band_min: float = 0.35
+    freq_band_max: float = 0.45
+    window_padding_s: float = 10.0
 
 
 def _coerce_params(params: SimulationParams | Mapping[str, object]) -> SimulationParams:
@@ -370,6 +375,102 @@ def detect_qpo_signal(f0_est: float, target_f0: float, tolerance_hz: float) -> b
     return bool(abs(float(f0_est) - float(target_f0)) <= float(tolerance_hz))
 
 
+def compute_fft_band_peak(
+    signal: np.ndarray,
+    dt: float,
+    fmin: float,
+    fmax: float,
+    use_hann: bool = True,
+) -> tuple[float, float]:
+    arr = np.asarray(signal, dtype=np.float64)
+    if arr.size < 8 or dt <= 0:
+        return float("nan"), float("nan")
+
+    centered = arr - float(np.mean(arr))
+    if np.allclose(centered, 0.0):
+        return float("nan"), float("nan")
+
+    if use_hann:
+        centered = centered * np.hanning(centered.size)
+
+    spectrum = np.fft.rfft(centered)
+    power = np.abs(spectrum) ** 2
+    freqs = np.fft.rfftfreq(centered.size, d=dt)
+    mask = (freqs >= fmin) & (freqs <= fmax)
+    if np.any(mask):
+        band_power = power[mask]
+        band_freqs = freqs[mask]
+        idx = int(np.argmax(band_power))
+        return float(band_power[idx]), float(band_freqs[idx])
+
+    # If the requested band is unresolved on this FFT grid, fall back to the nearest
+    # non-DC bin around band center to keep significance estimates defined for short bursts.
+    if freqs.size < 2:
+        return float("nan"), float("nan")
+    target = 0.5 * (float(fmin) + float(fmax))
+    valid_freqs = freqs[1:]
+    valid_power = power[1:]
+    nearest_idx = int(np.argmin(np.abs(valid_freqs - target)))
+    return float(valid_power[nearest_idx]), float(valid_freqs[nearest_idx])
+
+
+def phase_randomized_surrogate(signal: np.ndarray, rng: np.random.Generator) -> np.ndarray:
+    arr = np.asarray(signal, dtype=np.float64)
+    n = arr.size
+    if n < 4:
+        return arr.copy()
+
+    spectrum = np.fft.rfft(arr)
+    randomized = np.array(spectrum, copy=True)
+
+    if n % 2 == 0:
+        phase_idx = np.arange(1, randomized.size - 1)
+    else:
+        phase_idx = np.arange(1, randomized.size)
+
+    if phase_idx.size > 0:
+        phases = rng.uniform(0.0, 2.0 * np.pi, size=phase_idx.size)
+        randomized[phase_idx] = np.abs(randomized[phase_idx]) * np.exp(1j * phases)
+
+    randomized[0] = spectrum[0]
+    if n % 2 == 0 and randomized.size > 1:
+        randomized[-1] = complex(float(np.real(spectrum[-1])), 0.0)
+
+    return np.fft.irfft(randomized, n=n).astype(np.float64)
+
+
+def estimate_surrogate_p_value(observed_value: float, surrogate_values: np.ndarray) -> float:
+    if not np.isfinite(observed_value):
+        return float("nan")
+    vals = np.asarray(surrogate_values, dtype=np.float64)
+    vals = vals[np.isfinite(vals)]
+    if vals.size == 0:
+        return float("nan")
+    return float((1 + np.sum(vals >= observed_value)) / (vals.size + 1))
+
+
+def detect_qpo_significance(p_value: float, alpha: float) -> bool:
+    if not np.isfinite(p_value):
+        return False
+    return bool(float(p_value) <= float(alpha))
+
+
+def compute_wilson_ci(
+    k: int,
+    n: int,
+    z: float = 1.959963984540054,
+) -> tuple[float, float]:
+    if n <= 0:
+        return float("nan"), float("nan")
+    phat = float(k) / float(n)
+    denom = 1.0 + (z * z) / float(n)
+    center = (phat + (z * z) / (2.0 * float(n))) / denom
+    half = (z * np.sqrt((phat * (1.0 - phat) + (z * z) / (4.0 * float(n))) / float(n))) / denom
+    low = max(0.0, center - half)
+    high = min(1.0, center + half)
+    return float(low), float(high)
+
+
 def summarize_rigor_results(run_df: pd.DataFrame) -> pd.DataFrame:
     if run_df.empty:
         columns = [
@@ -379,6 +480,12 @@ def summarize_rigor_results(run_df: pd.DataFrame) -> pd.DataFrame:
             "n_runs",
             "recovery_rate",
             "false_positive_rate",
+            "recovery_rate_sig",
+            "false_positive_rate_sig",
+            "recovery_rate_sig_ci_low",
+            "recovery_rate_sig_ci_high",
+            "false_positive_rate_sig_ci_low",
+            "false_positive_rate_sig_ci_high",
             "median_knots",
             "iqr_knots",
             "median_edge_pct",
@@ -387,14 +494,27 @@ def summarize_rigor_results(run_df: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame(columns=columns)
 
     work_df = run_df.copy()
+    if "detected" not in work_df.columns:
+        if "detected_hit" in work_df.columns:
+            work_df["detected"] = work_df["detected_hit"]
+        else:
+            raise ValueError("run_df must include either 'detected' or 'detected_hit'")
+
+    if "detected_hit" not in work_df.columns:
+        work_df["detected_hit"] = work_df["detected"]
+
+    if "detected_sig" not in work_df.columns:
+        work_df["detected_sig"] = work_df["detected"]
+
     if "residual_gain_pct" not in work_df.columns:
         denom = work_df["residual_fred"].replace(0.0, np.nan)
         work_df["residual_gain_pct"] = ((work_df["residual_fred"] - work_df["residual_qpo"]) / denom) * 100.0
 
     grouped = work_df.groupby(["scenario", "B", "p0_scale"], dropna=False)
     summary = grouped.agg(
-        n_runs=("detected", "count"),
-        recovery_rate=("detected", "mean"),
+        n_runs=("detected_hit", "count"),
+        recovery_rate=("detected_hit", "mean"),
+        recovery_rate_sig=("detected_sig", "mean"),
         median_knots=("knots", "median"),
         median_edge_pct=("edge_pct", "median"),
         median_residual_gain_pct=("residual_gain_pct", "median"),
@@ -407,6 +527,31 @@ def summarize_rigor_results(run_df: pd.DataFrame) -> pd.DataFrame:
     summary = summary.merge(iqr_df[["scenario", "B", "p0_scale", "iqr_knots"]], on=["scenario", "B", "p0_scale"])
 
     summary["false_positive_rate"] = np.where(summary["B"] == 0.0, summary["recovery_rate"], np.nan)
+    summary["false_positive_rate_sig"] = np.where(summary["B"] == 0.0, summary["recovery_rate_sig"], np.nan)
+
+    ci_low_list: list[float] = []
+    ci_high_list: list[float] = []
+    fp_ci_low_list: list[float] = []
+    fp_ci_high_list: list[float] = []
+    for _, row in summary.iterrows():
+        n_runs = int(row["n_runs"])
+        k_sig = int(round(float(row["recovery_rate_sig"]) * n_runs))
+        low, high = compute_wilson_ci(k_sig, n_runs)
+        ci_low_list.append(low)
+        ci_high_list.append(high)
+
+        if float(row["B"]) == 0.0:
+            fp_low, fp_high = low, high
+        else:
+            fp_low, fp_high = float("nan"), float("nan")
+        fp_ci_low_list.append(fp_low)
+        fp_ci_high_list.append(fp_high)
+
+    summary["recovery_rate_sig_ci_low"] = ci_low_list
+    summary["recovery_rate_sig_ci_high"] = ci_high_list
+    summary["false_positive_rate_sig_ci_low"] = fp_ci_low_list
+    summary["false_positive_rate_sig_ci_high"] = fp_ci_high_list
+
     return summary[
         [
             "scenario",
@@ -415,6 +560,12 @@ def summarize_rigor_results(run_df: pd.DataFrame) -> pd.DataFrame:
             "n_runs",
             "recovery_rate",
             "false_positive_rate",
+            "recovery_rate_sig",
+            "false_positive_rate_sig",
+            "recovery_rate_sig_ci_low",
+            "recovery_rate_sig_ci_high",
+            "false_positive_rate_sig_ci_low",
+            "false_positive_rate_sig_ci_high",
             "median_knots",
             "iqr_knots",
             "median_edge_pct",

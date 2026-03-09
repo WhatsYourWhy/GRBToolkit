@@ -1,7 +1,14 @@
 import numpy as np
 import pandas as pd
 
-from grb_refresh import BenchmarkConfig, SimulationParams, detect_qpo_signal, summarize_rigor_results
+from grb_refresh import (
+    BenchmarkConfig,
+    SimulationParams,
+    detect_qpo_signal,
+    estimate_surrogate_p_value,
+    phase_randomized_surrogate,
+    summarize_rigor_results,
+)
 from run_rigor_benchmark import run_rigor_benchmark
 
 
@@ -23,7 +30,7 @@ def _small_scenarios() -> dict[str, SimulationParams]:
             dt=0.01,
             seed=10,
         ),
-        "boat_drift": SimulationParams(
+        "boat_transient": SimulationParams(
             A1=220.0,
             tau1=8.0,
             tau_r=1.2,
@@ -38,6 +45,8 @@ def _small_scenarios() -> dict[str, SimulationParams]:
             T=10.0,
             dt=0.02,
             seed=20,
+            qpo_window_start=3.0,
+            qpo_window_end=7.0,
         ),
     }
 
@@ -48,7 +57,29 @@ def test_detect_qpo_signal_rule():
     assert not detect_qpo_signal(float("nan"), 0.41, 0.02)
 
 
-def test_summarize_rigor_results_aggregation():
+def test_phase_randomized_surrogate_preserves_amplitude_and_changes_phase():
+    rng = np.random.default_rng(1234)
+    x = rng.normal(0.0, 1.0, size=256)
+    s = phase_randomized_surrogate(x, rng)
+
+    X = np.fft.rfft(x)
+    S = np.fft.rfft(s)
+
+    np.testing.assert_allclose(np.abs(X), np.abs(S), rtol=1e-10, atol=1e-10)
+    assert not np.allclose(np.angle(X[1:-1]), np.angle(S[1:-1]))
+
+
+def test_surrogate_p_value_bounds_and_monotonicity():
+    sur = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64)
+    p_low = estimate_surrogate_p_value(5.0, sur)
+    p_high = estimate_surrogate_p_value(1.5, sur)
+
+    assert 0.0 <= p_low <= 1.0
+    assert 0.0 <= p_high <= 1.0
+    assert p_low < p_high
+
+
+def test_summarize_rigor_results_aggregation_and_ci():
     run_df = pd.DataFrame(
         [
             {
@@ -60,6 +91,8 @@ def test_summarize_rigor_results_aggregation():
                 "edge_pct": 5.0,
                 "f0_est": 0.41,
                 "detected": True,
+                "detected_hit": True,
+                "detected_sig": False,
                 "residual_qpo": 4.0,
                 "residual_fred": 5.0,
             },
@@ -72,6 +105,8 @@ def test_summarize_rigor_results_aggregation():
                 "edge_pct": 7.0,
                 "f0_est": 0.39,
                 "detected": False,
+                "detected_hit": False,
+                "detected_sig": False,
                 "residual_qpo": 3.0,
                 "residual_fred": 6.0,
             },
@@ -82,17 +117,21 @@ def test_summarize_rigor_results_aggregation():
 
     assert np.isclose(row["recovery_rate"], 0.5)
     assert np.isclose(row["false_positive_rate"], 0.5)
+    assert np.isclose(row["recovery_rate_sig"], 0.0)
+    assert np.isclose(row["false_positive_rate_sig"], 0.0)
     assert np.isclose(row["median_knots"], 12.0)
     assert np.isclose(row["iqr_knots"], 2.0)
     assert np.isclose(row["median_edge_pct"], 6.0)
+    assert 0.0 <= row["recovery_rate_sig_ci_low"] <= row["recovery_rate_sig_ci_high"] <= 1.0
 
 
-def test_benchmark_runner_smoke_outputs(tmp_path):
+def test_benchmark_runner_smoke_outputs_and_modes(tmp_path):
     cfg = BenchmarkConfig(
-        scenario_names=("short_70", "boat_drift"),
+        scenario_names=("short_70", "boat_transient"),
         b_grid=(0.0, 0.3),
         p0_scale_grid=(1.0,),
         n_replicates=5,
+        n_surrogates=50,
         freq_tolerance_hz=0.02,
         seed_start=120000,
     )
@@ -108,9 +147,10 @@ def test_benchmark_runner_smoke_outputs(tmp_path):
         paper_path=paper_path,
         scenario_map=_small_scenarios(),
         max_points_for_bb=500,
+        max_points_for_sig=500,
     )
 
-    assert set(run_df.columns) == {
+    expected_run_cols = {
         "scenario",
         "B",
         "p0_scale",
@@ -119,34 +159,42 @@ def test_benchmark_runner_smoke_outputs(tmp_path):
         "edge_pct",
         "f0_est",
         "detected",
+        "detected_hit",
         "residual_qpo",
         "residual_fred",
+        "peak_power_obs",
+        "peak_freq_obs",
+        "p_value",
+        "detected_sig",
+        "detection_mode",
+        "p_value_global",
+        "p_value_window",
     }
-    assert set(summary_df.columns) == {
-        "scenario",
-        "B",
-        "p0_scale",
-        "n_runs",
-        "recovery_rate",
-        "false_positive_rate",
-        "median_knots",
-        "iqr_knots",
-        "median_edge_pct",
-        "median_residual_gain_pct",
-    }
+    assert expected_run_cols.issubset(set(run_df.columns))
+    assert "recovery_rate_sig" in summary_df.columns
+    assert "false_positive_rate_sig" in summary_df.columns
+    assert "recovery_rate_sig_ci_low" in summary_df.columns
+    assert "recovery_rate_sig_ci_high" in summary_df.columns
+    assert "false_positive_rate_sig_ci_low" in summary_df.columns
+    assert "false_positive_rate_sig_ci_high" in summary_df.columns
 
     assert (out_dir / "run_level_results.csv").exists()
     assert (out_dir / "recovery_summary.csv").exists()
-    assert (fig_dir / "recovery_heatmap.png").exists()
-    assert (fig_dir / "fpr_vs_p0.png").exists()
+    assert (fig_dir / "recovery_heatmap_sig.png").exists()
+    assert (fig_dir / "fpr_vs_p0_sig.png").exists()
     assert (fig_dir / "knot_stability.png").exists()
+    assert (fig_dir / "pvalue_distribution.png").exists()
     assert paper_path.exists()
     assert "Injection-Recovery and False-Positive Benchmark" in paper_path.read_text(encoding="utf-8")
 
     b0_rows = summary_df[summary_df["B"] == 0.0]
     assert not b0_rows.empty
-    assert b0_rows["false_positive_rate"].notna().all()
-    assert ((b0_rows["false_positive_rate"] >= 0.0) & (b0_rows["false_positive_rate"] <= 1.0)).all()
+    assert b0_rows["false_positive_rate_sig"].notna().all()
+    assert ((b0_rows["false_positive_rate_sig"] >= 0.0) & (b0_rows["false_positive_rate_sig"] <= 1.0)).all()
+    assert run_df[run_df["scenario"] == "boat_transient"]["detection_mode"].eq("windowed").all()
+    assert run_df[run_df["scenario"] == "short_70"]["detection_mode"].eq("global").all()
+    assert run_df["p_value"].notna().all()
+    assert ((run_df["p_value"] >= 0.0) & (run_df["p_value"] <= 1.0)).all()
 
 
 def test_benchmark_slice_is_deterministic(tmp_path):
@@ -155,6 +203,7 @@ def test_benchmark_slice_is_deterministic(tmp_path):
         b_grid=(0.0, 0.3),
         p0_scale_grid=(1.0,),
         n_replicates=3,
+        n_surrogates=20,
         freq_tolerance_hz=0.02,
         seed_start=130000,
     )
@@ -174,6 +223,7 @@ def test_benchmark_slice_is_deterministic(tmp_path):
         paper_path=paper_a,
         scenario_map=scenarios,
         max_points_for_bb=400,
+        max_points_for_sig=400,
     )
     run_b, summary_b = run_rigor_benchmark(
         config=cfg,
@@ -182,6 +232,7 @@ def test_benchmark_slice_is_deterministic(tmp_path):
         paper_path=paper_b,
         scenario_map=scenarios,
         max_points_for_bb=400,
+        max_points_for_sig=400,
     )
 
     pd.testing.assert_frame_equal(run_a.reset_index(drop=True), run_b.reset_index(drop=True))
