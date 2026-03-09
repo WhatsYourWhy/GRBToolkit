@@ -10,6 +10,7 @@ from grb_refresh import (
     summarize_rigor_results,
 )
 from run_rigor_benchmark import run_rigor_benchmark
+from run_rigor_benchmark import _detrend_signal
 
 
 def _small_scenarios() -> dict[str, SimulationParams]:
@@ -79,6 +80,17 @@ def test_surrogate_p_value_bounds_and_monotonicity():
     assert p_low < p_high
 
 
+def test_detrend_signal_preserves_shape_and_reduces_linear_component():
+    x = np.linspace(0.0, 5.0, 200)
+    signal = 3.0 * x + 0.5 * np.sin(2.0 * np.pi * 0.4 * x)
+    detrended = _detrend_signal(signal, dt=float(x[1] - x[0]), order=1)
+
+    assert detrended.shape == signal.shape
+    assert np.isfinite(detrended).all()
+    coeff_after = np.polyfit(x, detrended, deg=1)
+    assert abs(coeff_after[0]) < 0.2
+
+
 def test_summarize_rigor_results_aggregation_and_ci():
     run_df = pd.DataFrame(
         [
@@ -134,6 +146,8 @@ def test_benchmark_runner_smoke_outputs_and_modes(tmp_path):
         n_surrogates=50,
         freq_tolerance_hz=0.02,
         seed_start=120000,
+        detector_variant="windowed_fft_sig",
+        detrend_order=1,
     )
 
     out_dir = tmp_path / "outputs"
@@ -169,6 +183,8 @@ def test_benchmark_runner_smoke_outputs_and_modes(tmp_path):
         "detection_mode",
         "p_value_global",
         "p_value_window",
+        "detector_variant",
+        "detrend_order",
     }
     assert expected_run_cols.issubset(set(run_df.columns))
     assert "recovery_rate_sig" in summary_df.columns
@@ -193,8 +209,34 @@ def test_benchmark_runner_smoke_outputs_and_modes(tmp_path):
     assert ((b0_rows["false_positive_rate_sig"] >= 0.0) & (b0_rows["false_positive_rate_sig"] <= 1.0)).all()
     assert run_df[run_df["scenario"] == "boat_transient"]["detection_mode"].eq("windowed").all()
     assert run_df[run_df["scenario"] == "short_70"]["detection_mode"].eq("global").all()
+    assert run_df["detector_variant"].eq("windowed_fft_sig").all()
+    assert run_df["detrend_order"].eq(1).all()
     assert run_df["p_value"].notna().all()
     assert ((run_df["p_value"] >= 0.0) & (run_df["p_value"] <= 1.0)).all()
+
+
+def test_global_variant_forces_global_mode_even_for_transient(tmp_path):
+    cfg = BenchmarkConfig(
+        scenario_names=("boat_transient",),
+        b_grid=(0.0, 0.3),
+        p0_scale_grid=(1.0,),
+        n_replicates=3,
+        n_surrogates=20,
+        seed_start=220000,
+        detector_variant="global_tapered_fft_sig",
+    )
+
+    run_df, _ = run_rigor_benchmark(
+        config=cfg,
+        output_dir=tmp_path / "outputs",
+        figures_dir=tmp_path / "figures",
+        paper_path=tmp_path / "paper" / "grb_substructure_v2.md",
+        scenario_map={"boat_transient": _small_scenarios()["boat_transient"]},
+        max_points_for_bb=300,
+        max_points_for_sig=300,
+    )
+
+    assert run_df["detection_mode"].eq("global").all()
 
 
 def test_benchmark_slice_is_deterministic(tmp_path):
@@ -206,6 +248,8 @@ def test_benchmark_slice_is_deterministic(tmp_path):
         n_surrogates=20,
         freq_tolerance_hz=0.02,
         seed_start=130000,
+        detector_variant="detrended_fft_sig",
+        detrend_order=1,
     )
     scenarios = {"short_70": _small_scenarios()["short_70"]}
 
