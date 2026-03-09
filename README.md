@@ -145,7 +145,8 @@ python run_rigor_benchmark.py
 
 - Run-level CSV: `outputs/rigor_benchmark/run_level_results.csv`
 - Summary CSV: `outputs/rigor_benchmark/recovery_summary.csv`
-- Recovery heatmap: `figures/recovery_heatmap.png`
-- False-positive plot: `figures/fpr_vs_p0.png`
+- Significance recovery heatmap: `figures/recovery_heatmap_sig.png`
+- Significance false-positive plot: `figures/fpr_vs_p0_sig.png`
 - Knot stability plot: `figures/knot_stability.png`
+- P-value distribution plot: `figures/pvalue_distribution.png`
 - Paper supplement section updated in: `paper/grb_substructure_v2.md`

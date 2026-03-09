@@ -68,44 +68,47 @@ The corrected simulation confirms that adaptive Bayesian Blocks can recover inje
 
 <!-- BENCHMARK_SECTION_START -->
 ## Injection-Recovery and False-Positive Benchmark
-This benchmark quantifies recovery behavior under controlled injections and explicitly separates methods validation from observational existence claims. Detection is defined as `|f0_est - f_qpo| <= 0.02 Hz`, and false-positive behavior is estimated from the `B=0` branch under matched settings.
+This benchmark quantifies recovery behavior under controlled injections and explicitly separates methods validation from observational existence claims. Primary detection uses FFT band-peak significance in `0.35-0.45 Hz`, calibrated with phase-randomized surrogates and thresholded at `alpha=0.05`. Legacy frequency-hit rates are retained in CSV outputs for backward comparison.
 
-| scenario | B | recovery_rate | false_positive_rate | median_knots | iqr_knots | median_residual_gain_pct |
-| --- | --- | --- | --- | --- | --- | --- |
-| boat_drift | 0.0000 | 0.4250 | 0.4250 | 667.0000 | 38.7500 | 92.5980 |
-| boat_drift | 0.2000 | 1.0000 | nan | 763.5000 | 33.5000 | 92.9091 |
-| boat_drift | 0.3000 | 1.0000 | nan | 807.0000 | 21.0000 | 93.2329 |
-| boat_drift | 0.4000 | 1.0000 | nan | 838.5000 | 25.2500 | 93.6229 |
-| boat_transient | 0.0000 | 0.4000 | 0.4000 | 637.0000 | 30.5000 | 91.5593 |
-| boat_transient | 0.2000 | 0.4000 | nan | 642.0000 | 28.5000 | 91.5612 |
-| boat_transient | 0.3000 | 0.4500 | nan | 643.5000 | 34.7500 | 91.5580 |
-| boat_transient | 0.4000 | 0.6250 | nan | 643.0000 | 31.0000 | 91.5563 |
-| mid | 0.0000 | 0.4750 | 0.4750 | 20.0000 | 1.0000 | 2.2405 |
-| mid | 0.2000 | 1.0000 | nan | 37.0000 | 4.0000 | 28.4035 |
-| mid | 0.3000 | 1.0000 | nan | 51.0000 | 4.5000 | 43.3344 |
-| mid | 0.4000 | 1.0000 | nan | 64.0000 | 5.0000 | 54.1982 |
-| short_100 | 0.0000 | 0.0000 | 0.0000 | 3.0000 | 0.0000 | 12.0773 |
-| short_100 | 0.2000 | 0.0000 | nan | 3.0000 | 0.0000 | 11.6935 |
-| short_100 | 0.3000 | 0.0000 | nan | 3.0000 | 0.0000 | 11.3735 |
-| short_100 | 0.4000 | 0.0000 | nan | 3.0000 | 0.0000 | 11.4755 |
-| short_70 | 0.0000 | 0.0000 | 0.0000 | 3.0000 | 0.0000 | 6.7764 |
-| short_70 | 0.2000 | 0.0000 | nan | 3.0000 | 0.0000 | 6.9825 |
-| short_70 | 0.3000 | 0.0000 | nan | 3.0000 | 0.0000 | 7.1792 |
-| short_70 | 0.4000 | 0.0000 | nan | 3.0000 | 0.0000 | 7.5082 |
-| weak | 0.0000 | 1.0000 | 1.0000 | 3.0000 | 0.0000 | 1.4076 |
-| weak | 0.2000 | 1.0000 | nan | 3.0000 | 0.0000 | 1.1786 |
-| weak | 0.3000 | 1.0000 | nan | 3.0000 | 0.0000 | 1.1418 |
-| weak | 0.4000 | 1.0000 | nan | 3.0000 | 0.0000 | 1.3371 |
+| scenario | B | recovery_rate_sig | false_positive_rate_sig | recovery_rate_sig_ci_low | recovery_rate_sig_ci_high | median_knots | iqr_knots | median_residual_gain_pct |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| boat_drift | 0.0000 | 0.0250 | 0.0250 | 0.0044 | 0.1288 | 667.0000 | 38.7500 | 92.5980 |
+| boat_drift | 0.2000 | 0.0000 | nan | 0.0000 | 0.0876 | 763.5000 | 33.5000 | 92.9091 |
+| boat_drift | 0.3000 | 0.0000 | nan | 0.0000 | 0.0876 | 807.0000 | 21.0000 | 93.2329 |
+| boat_drift | 0.4000 | 0.0000 | nan | 0.0000 | 0.0876 | 838.5000 | 25.2500 | 93.6229 |
+| boat_transient | 0.0000 | 0.0250 | 0.0250 | 0.0044 | 0.1288 | 637.0000 | 30.5000 | 91.5593 |
+| boat_transient | 0.2000 | 0.0250 | nan | 0.0044 | 0.1288 | 642.0000 | 28.5000 | 91.5612 |
+| boat_transient | 0.3000 | 0.0250 | nan | 0.0044 | 0.1288 | 643.5000 | 34.7500 | 91.5580 |
+| boat_transient | 0.4000 | 0.0000 | nan | 0.0000 | 0.0876 | 643.0000 | 31.0000 | 91.5563 |
+| mid | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0876 | 20.0000 | 1.0000 | 2.2405 |
+| mid | 0.2000 | 0.0000 | nan | 0.0000 | 0.0876 | 37.0000 | 4.0000 | 28.4035 |
+| mid | 0.3000 | 0.0000 | nan | 0.0000 | 0.0876 | 51.0000 | 4.5000 | 43.3344 |
+| mid | 0.4000 | 0.0000 | nan | 0.0000 | 0.0876 | 64.0000 | 5.0000 | 54.1982 |
+| short_100 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0876 | 3.0000 | 0.0000 | 12.0773 |
+| short_100 | 0.2000 | 0.0000 | nan | 0.0000 | 0.0876 | 3.0000 | 0.0000 | 11.6935 |
+| short_100 | 0.3000 | 0.0000 | nan | 0.0000 | 0.0876 | 3.0000 | 0.0000 | 11.3735 |
+| short_100 | 0.4000 | 0.0000 | nan | 0.0000 | 0.0876 | 3.0000 | 0.0000 | 11.4755 |
+| short_70 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0876 | 3.0000 | 0.0000 | 6.7764 |
+| short_70 | 0.2000 | 0.0000 | nan | 0.0000 | 0.0876 | 3.0000 | 0.0000 | 6.9825 |
+| short_70 | 0.3000 | 0.0000 | nan | 0.0000 | 0.0876 | 3.0000 | 0.0000 | 7.1792 |
+| short_70 | 0.4000 | 0.0000 | nan | 0.0000 | 0.0876 | 3.0000 | 0.0000 | 7.5082 |
+| weak | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0876 | 3.0000 | 0.0000 | 1.4076 |
+| weak | 0.2000 | 0.0000 | nan | 0.0000 | 0.0876 | 3.0000 | 0.0000 | 1.1786 |
+| weak | 0.3000 | 0.0250 | nan | 0.0044 | 0.1288 | 3.0000 | 0.0000 | 1.1418 |
+| weak | 0.4000 | 0.0250 | nan | 0.0044 | 0.1288 | 3.0000 | 0.0000 | 1.3371 |
 
 ### Benchmark Artifacts
 - `outputs/rigor_benchmark/run_level_results.csv`
 - `outputs/rigor_benchmark/recovery_summary.csv`
-- `../figures/recovery_heatmap.png`
-- `../figures/fpr_vs_p0.png`
+- `../figures/recovery_heatmap_sig.png`
+- `../figures/fpr_vs_p0_sig.png`
 - `../figures/knot_stability.png`
+- `../figures/pvalue_distribution.png`
 
 This section is methods validation only and should not be interpreted as direct observational proof of QPO existence in real bursts.
 <!-- BENCHMARK_SECTION_END -->
+
+
 
 
 ## References
