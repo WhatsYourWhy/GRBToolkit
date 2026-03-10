@@ -94,7 +94,7 @@ python run_model_compare.py
 
 If you use GRBToolkit, please cite:
 
-> WhatsYourWhy *Detecting Coherent Modulation in GRB Light Curves via QPIX and Time-Frequency Simulation*. WhatsYourWhy (2025). [https://cognisi.io](https://cognisi.io)
+> WhatsYourWhy *Detecting Coherent Modulation in GRB Light Curves via QPIX and Time-Frequency Simulation*. WhatsYourWhy (2025). [https://shankstrategy.com](https://shankstrategy.com)
 
 ---
 
@@ -102,7 +102,7 @@ If you use GRBToolkit, please cite:
 
 
 [WhatsYourWhy](https://whatsyourwhy.example.com)
-[Justin@cognisi.io](mailto:Justin@cognisi.io)
+[Justin@shankstrategy.com](mailto:Justin@shankstrategy.com)
 
 ---
 
