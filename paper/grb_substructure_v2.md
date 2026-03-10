@@ -157,6 +157,39 @@ Interpretation is conservative: this remains methods validation and calibration,
 
 
 
+<!-- TTE_BRIDGE_SECTION_START -->
+## Real-TTE Bridge Pilot (Methods Validation)
+We ran a small curated TTE bridge pilot using the same significance-calibrated FFT detector (phase-randomized surrogates) to evaluate portability and calibration behavior on real bursts.
+
+| burst_id | p_value | detected_sig | peak_freq_obs | null_empirical_fpr_alpha | detection_mode |
+| --- | --- | --- | --- | --- | --- |
+| bn090709630_n3 | 0.1244 | False | 0.3583 | 0.0125 | global |
+| bn170817529_n5 | 0.6418 | False | 0.3625 | 0.0500 | global |
+
+Summary:
+| n_bursts | n_detected_sig | detected_fraction | median_p_value | mean_null_empirical_fpr_alpha | alpha | calibration_status | interpretation |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 2 | 0 | 0.0000 | 0.3831 | 0.0312 | 0.0500 | calibrated_or_conservative | Methods calibration check only; this pilot is not observational proof of QPO existence. |
+
+Robustness sweep (seeds x bin widths x bands):
+- `18` runs total, `0` runs with significance detections, `max_detected_fraction=0.0000`.
+- Null calibration remained controlled (`max mean_null_empirical_fpr_alpha=0.0750`, threshold check `<= 1.5 * alpha`).
+- Solidify decision: `LOCK_MIXED_NEGATIVE_METHODS_CLAIM`.
+
+Artifacts:
+- `outputs/sprint5_tte_bridge/tte_bridge_results.csv`
+- `outputs/sprint5_tte_bridge/tte_bridge_summary.csv`
+- `outputs/sprint5_tte_solidify/solidify_summary_matrix.csv`
+- `outputs/sprint5_tte_solidify/solidify_decision.csv`
+- `../figures/sprint5_tte_pvalues.png`
+- `../figures/sprint5_tte_null_calibration.png`
+- `../figures/sprint5_tte_solidify_detected_fraction.png`
+- `../figures/sprint5_tte_solidify_null_fpr.png`
+
+Interpretation remains methods-first: this pilot does not claim observational confirmation of QPOs.
+<!-- TTE_BRIDGE_SECTION_END -->
+
+
 ## References
 - Chattopadhyay, T., Misra, R., & Bhattacharyya, S. (2022). *The Astrophysical Journal*, 935, 157. https://doi.org/10.3847/1538-4357/ac7d5a
 - Kumar, P., & Zhang, B. (2015). *Physics Reports*, 561, 1-109. https://doi.org/10.1016/j.physrep.2014.09.008

@@ -118,3 +118,22 @@ Recover meaningful true positives while keeping significance-calibrated false po
   - `figures/sprint5_tte_pvalues.png`
   - `figures/sprint5_tte_null_calibration.png`
   - `docs/sprint5_tte_bridge_log.md`
+
+## Item 5 Solidify Status (March 10, 2026)
+- Completed robustness matrix over seeds, bin widths, and frequency bands:
+  - `seeds = [701000, 701500, 702000]`
+  - `bin_width_s = [0.02, 0.05, 0.10]`
+  - `bands = [0.30-0.40, 0.35-0.45]`
+  - total runs: `18`
+- Outcome:
+  - `n_runs_with_detection = 0`
+  - `max_detected_fraction = 0.0`
+  - `max_null_empirical_fpr_alpha = 0.075`
+  - decision: `LOCK_MIXED_NEGATIVE_METHODS_CLAIM`
+- Artifacts:
+  - `outputs/sprint5_tte_solidify/solidify_summary_matrix.csv`
+  - `outputs/sprint5_tte_solidify/solidify_burst_matrix.csv`
+  - `outputs/sprint5_tte_solidify/solidify_decision.csv`
+  - `figures/sprint5_tte_solidify_detected_fraction.png`
+  - `figures/sprint5_tte_solidify_null_fpr.png`
+  - `docs/sprint5_tte_solidify_log.md`

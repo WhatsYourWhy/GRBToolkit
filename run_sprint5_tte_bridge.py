@@ -148,6 +148,7 @@ def _load_burst_series(
     burst_row: pd.Series,
     root_dir: Path,
     default_bin_width_s: float,
+    force_bin_width_s: Optional[float] = None,
 ) -> tuple[np.ndarray, np.ndarray, str, float, Path]:
     input_path = _resolve_path(str(burst_row["input_path"]), root_dir=root_dir)
     if not input_path.exists():
@@ -163,9 +164,12 @@ def _load_burst_series(
         else:
             raise ValueError(f"Cannot infer input_type for file: {input_path}")
 
-    bin_width_s = _coerce_optional_float(burst_row.get("bin_width_s"))
-    if bin_width_s is None:
-        bin_width_s = float(default_bin_width_s)
+    if force_bin_width_s is not None:
+        bin_width_s = float(force_bin_width_s)
+    else:
+        bin_width_s = _coerce_optional_float(burst_row.get("bin_width_s"))
+        if bin_width_s is None:
+            bin_width_s = float(default_bin_width_s)
 
     if input_type_raw == "fits":
         event_times = _extract_time_column_from_fits(input_path)
@@ -411,6 +415,7 @@ def run_sprint5_tte_bridge(
     default_window_padding_s: float = 10.0,
     max_points_for_sig: int = 4096,
     seed: int = 701000,
+    force_bin_width_s: Optional[float] = None,
     update_paper: bool = False,
     paper_path: Optional[Path] = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -430,6 +435,7 @@ def run_sprint5_tte_bridge(
             burst_row=burst_row,
             root_dir=root_dir,
             default_bin_width_s=float(default_bin_width_s),
+            force_bin_width_s=force_bin_width_s,
         )
 
         if t.size < 8 or counts.size < 8:
@@ -625,6 +631,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--freq-band-min", type=float, default=0.35)
     parser.add_argument("--freq-band-max", type=float, default=0.45)
     parser.add_argument("--default-bin-width-s", type=float, default=0.05)
+    parser.add_argument("--force-bin-width-s", type=float, default=None)
     parser.add_argument("--default-window-padding-s", type=float, default=10.0)
     parser.add_argument("--max-points-for-sig", type=int, default=4096)
     parser.add_argument("--seed", type=int, default=701000)
@@ -645,6 +652,7 @@ if __name__ == "__main__":
         freq_band_min=float(args.freq_band_min),
         freq_band_max=float(args.freq_band_max),
         default_bin_width_s=float(args.default_bin_width_s),
+        force_bin_width_s=(None if args.force_bin_width_s is None else float(args.force_bin_width_s)),
         default_window_padding_s=float(args.default_window_padding_s),
         max_points_for_sig=int(args.max_points_for_sig),
         seed=int(args.seed),

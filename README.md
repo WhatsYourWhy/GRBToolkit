@@ -277,3 +277,20 @@ python run_sprint5_tte_bridge.py --manifest-path docs/sprint5_tte_manifest.csv
 - Null-calibration figure: `figures/sprint5_tte_null_calibration.png`
 - Pilot run log: `docs/sprint5_tte_bridge_log.md`
 - Default curated manifest: `docs/sprint5_tte_manifest.csv`
+
+### Sprint 5 Solidify Sweep (Robustness Matrix)
+
+```bash
+cd /mnt/c/Users/Justin/GRBToolkit
+source .venv/bin/activate
+python run_sprint5_tte_solidify.py --manifest-path docs/sprint5_tte_manifest.csv
+```
+
+### Sprint 5 Solidify Artifacts
+
+- Sweep summary matrix: `outputs/sprint5_tte_solidify/solidify_summary_matrix.csv`
+- Burst-level matrix: `outputs/sprint5_tte_solidify/solidify_burst_matrix.csv`
+- Sweep decision: `outputs/sprint5_tte_solidify/solidify_decision.csv`
+- Detected-fraction heatmap: `figures/sprint5_tte_solidify_detected_fraction.png`
+- Null-calibration heatmap: `figures/sprint5_tte_solidify_null_fpr.png`
+- Sweep log: `docs/sprint5_tte_solidify_log.md`
