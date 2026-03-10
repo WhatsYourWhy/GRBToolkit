@@ -205,3 +205,57 @@ python run_sprint4_welch_compare.py
 - Variant summary CSVs: `outputs/sprint4_welch_compare/summary_windowed_fft_sig.csv`, `outputs/sprint4_welch_compare/summary_welch_fft_sig.csv`
 - Tradeoff figure: `figures/sprint4_welch_tradeoff.png`
 - Run log: `docs/sprint4_welch_log.md`
+
+### Sprint 4 Item 3 Run (Tiled Window + Multiple-Testing Control)
+
+```bash
+cd /mnt/c/Users/Justin/GRBToolkit
+source .venv/bin/activate
+python run_sprint4_tiled_compare.py
+```
+
+### Sprint 4 Item 3 Artifacts
+
+- Comparison CSV: `outputs/sprint4_tiled_compare/tiled_comparison.csv`
+- Decision CSV: `outputs/sprint4_tiled_compare/tiled_decision.csv`
+- Variant run-level CSVs: `outputs/sprint4_tiled_compare/run_level_windowed_fft_sig.csv`, `outputs/sprint4_tiled_compare/run_level_tiled_window_fft_sig.csv`
+- Variant summary CSVs: `outputs/sprint4_tiled_compare/summary_windowed_fft_sig.csv`, `outputs/sprint4_tiled_compare/summary_tiled_window_fft_sig.csv`
+- Tradeoff figure: `figures/sprint4_tiled_tradeoff.png`
+- Run log: `docs/sprint4_tiled_log.md`
+
+### Sprint 4 Item 3 Tuning Sweep
+
+```bash
+cd /mnt/c/Users/Justin/GRBToolkit
+source .venv/bin/activate
+python run_sprint4_tiled_tune.py
+```
+
+### Sprint 4 Item 3 Tuning Artifacts
+
+- Candidate ranking CSV: `docs/sprint4_tiled_tune/tiled_tune_candidates.csv`
+- Best candidate CSV: `docs/sprint4_tiled_tune/tiled_tune_best.csv`
+- Stop/Go decision CSV: `docs/sprint4_tiled_tune/tiled_tune_decision.csv`
+- Baseline run-level CSV: `docs/sprint4_tiled_tune/run_level_windowed_fft_sig.csv`
+- Candidate run-level CSVs: `docs/sprint4_tiled_tune/run_level_T*.csv`
+- Delta scatter figure: `figures/sprint4_tiled_tune_delta_scatter.png`
+- Tuning log: `docs/sprint4_tiled_tune_log.md`
+
+### Sprint 4 Item 4 Run (Detrend Sweep with Holdout)
+
+```bash
+cd /mnt/c/Users/Justin/GRBToolkit
+source .venv/bin/activate
+python run_sprint4_detrend_sweep.py
+```
+
+### Sprint 4 Item 4 Artifacts
+
+- Candidate summary CSV: `outputs/sprint4_detrend_sweep/detrend_candidate_summary.csv`
+- Best candidate CSV: `outputs/sprint4_detrend_sweep/detrend_best_candidate.csv`
+- Decision CSV: `outputs/sprint4_detrend_sweep/detrend_decision.csv`
+- Split baseline run-level CSVs: `outputs/sprint4_detrend_sweep/run_level_train_baseline.csv`, `outputs/sprint4_detrend_sweep/run_level_holdout_baseline.csv`
+- Split candidate run-level CSVs: `outputs/sprint4_detrend_sweep/run_level_train_D*.csv`, `outputs/sprint4_detrend_sweep/run_level_holdout_D*.csv`
+- Tradeoff figure: `figures/sprint4_detrend_tradeoff.png`
+- Delta figure: `figures/sprint4_detrend_delta.png`
+- Run log: `docs/sprint4_detrend_log.md`
