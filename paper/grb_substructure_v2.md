@@ -59,16 +59,16 @@ AIC snapshot for one representative burst (BOAT drift):
 - `../figures/bb_sensitivity.png`
 
 ## 6. Conclusions
-This project now has a reproducible, corrected simulation baseline and a transparent significance-calibration framework, but the current detector family is not yet sufficient for strong positive recovery claims in the hardest target regimes. In the full balanced Sprint 3 benchmark, none of the evaluated variants met the pre-registered acceptance bar (`TPR_sig >= 0.6` at `B>=0.2` with `FPR_sig <= 0.1` at `B=0`) for `mid` and `boat_drift`. The most defensible interpretation is therefore a negative/mixed methods result: calibration appears controlled, sensitivity remains limited, and further detector development should be treated as an open methods problem rather than evidence of astrophysical QPO existence. Immediate next work is a focused Sprint 4 sequence that prioritizes sensitivity gains while explicitly protecting false-positive calibration.
+This project now has a reproducible corrected simulation baseline, significance-calibrated benchmarking, and a real-data bridge with explicit calibration checks. Across Sprint 3 and Sprint 4 detector-development tracks, none of the evaluated detector families achieved meaningful target-group true-positive recovery (`mid`, `boat_drift`) under the pre-registered acceptance bar (`TPR_sig >= 0.6` at `B>=0.2` with `FPR_sig <= 0.1` at `B=0`). Sprint 5 real-TTE bridge and robustness sweeps also showed no significance detections while remaining calibration-controlled. The defensible scope-locked interpretation is therefore a mixed/negative methods result: the pipeline appears reproducible and reasonably calibrated, but sensitivity is insufficient for astrophysical QPO confirmation claims in the tested regimes.
 
-## 7. Sprint 4 Candidate Experiments (Prioritized)
-| Rank | Experiment | Expected TPR Gain | FPR Risk | Priority Rationale | Immediate Success Check |
-| --- | --- | --- | --- | --- | --- |
-| 1 | Window-and-band optimization on injection grid (fixed surrogate null) | High | Low-Medium | Biggest near-term leverage without changing null calibration model | `mid` or `boat_drift` reaches `TPR_sig >= 0.2` while `FPR_sig <= 0.1` |
-| 2 | Multi-taper or Welch-style peak statistic under same surrogate test | Medium-High | Low-Medium | Reduces single-FFT variance and should improve peak stability | Improve target-group `TPR_sig - FPR_sig` vs current baseline |
-| 3 | Transient-focused tiled windows with multiple-testing correction | Medium | Medium | Better match for nonstationary injections, especially `boat_transient` | `boat_transient` TPR increases without crossing `FPR_sig > 0.1` |
-| 4 | Detrend model sweep (order/robust fit) with strict holdout seeds | Medium | Medium | Current detrend path helps little in targets; may need better trend removal | Target scenarios improve over current detrended variant by >=0.05 TPR |
-| 5 | Real-data bridge pilot (limited TTE subset, methods claim only) | Low (simulation TPR) / High (external validity) | Medium | Validates portability and failure modes before broader claims | Complete pilot with calibrated p-value report and no claim inflation |
+## 7. Completed Detector Work (Sprint 4-5)
+| Track | Goal | Outcome | Claim Impact |
+| --- | --- | --- | --- |
+| Sprint 4 Item 1 (window/band optimization) | Recover target-group TPR without raising FPR | No target-group TPR lift | No support for positive-recovery claim |
+| Sprint 4 Item 2 (Welch statistic) | Improve `TPR-FPR` tradeoff vs windowed FFT | Target-group score worsened | Rejected as primary path |
+| Sprint 4 Item 3 (tiled windows + correction) | Improve transient sensitivity with controlled FPR | Lowered FPR but did not increase target-group TPR | Helpful calibration, insufficient recovery |
+| Sprint 4 Item 4 (detrend sweep with holdout) | Recover TPR while holding FPR low | Holdout FPR improved, TPR unchanged | `STOP_OR_PIVOT` |
+| Sprint 5 Item 5 (real-TTE bridge + solidify sweep) | Test portability and calibration on real bursts | `18/18` robustness runs with zero detections and controlled null calibration | `LOCK_MIXED_NEGATIVE_METHODS_CLAIM` |
 
 ## Data Artifacts
 - Metrics CSV: `outputs/core_refresh/scenario_metrics.csv`
