@@ -29,6 +29,7 @@ VALID_DETECTOR_VARIANTS = (
     "global_tapered_fft_sig",
     "windowed_fft_sig",
     "detrended_fft_sig",
+    "welch_fft_sig",
 )
 
 
@@ -99,32 +100,129 @@ def _compute_significance_for_series(
     fmax: float,
     n_surrogates: int,
     rng: np.random.Generator,
+    statistic_mode: str = "fft",
+    welch_segment_points: int = 256,
+    welch_overlap_frac: float = 0.5,
 ) -> tuple[float, float, float]:
-    peak_power_obs, peak_freq_obs = compute_fft_band_peak(
-        signal=counts.astype(np.float64),
-        dt=dt,
-        fmin=fmin,
-        fmax=fmax,
-        use_hann=True,
-    )
-    if not np.isfinite(peak_power_obs):
-        return float("nan"), float("nan"), float("nan")
-
-    surrogate_peaks = np.zeros(n_surrogates, dtype=np.float64)
-    base_signal = counts.astype(np.float64)
-    for idx in range(n_surrogates):
-        surrogate = phase_randomized_surrogate(base_signal, rng)
-        sur_peak, _ = compute_fft_band_peak(
-            signal=surrogate,
+    arr = counts.astype(np.float64)
+    if statistic_mode == "welch":
+        peak_power_obs, peak_freq_obs = _compute_welch_band_peak(
+            signal=arr,
+            dt=dt,
+            fmin=fmin,
+            fmax=fmax,
+            segment_points=welch_segment_points,
+            overlap_frac=welch_overlap_frac,
+            use_hann=True,
+        )
+    else:
+        peak_power_obs, peak_freq_obs = compute_fft_band_peak(
+            signal=arr,
             dt=dt,
             fmin=fmin,
             fmax=fmax,
             use_hann=True,
         )
+    if not np.isfinite(peak_power_obs):
+        return float("nan"), float("nan"), float("nan")
+
+    surrogate_peaks = np.zeros(n_surrogates, dtype=np.float64)
+    base_signal = arr
+    for idx in range(n_surrogates):
+        surrogate = phase_randomized_surrogate(base_signal, rng)
+        if statistic_mode == "welch":
+            sur_peak, _ = _compute_welch_band_peak(
+                signal=surrogate,
+                dt=dt,
+                fmin=fmin,
+                fmax=fmax,
+                segment_points=welch_segment_points,
+                overlap_frac=welch_overlap_frac,
+                use_hann=True,
+            )
+        else:
+            sur_peak, _ = compute_fft_band_peak(
+                signal=surrogate,
+                dt=dt,
+                fmin=fmin,
+                fmax=fmax,
+                use_hann=True,
+            )
         surrogate_peaks[idx] = sur_peak
 
     p_value = estimate_surrogate_p_value(peak_power_obs, surrogate_peaks)
     return peak_power_obs, peak_freq_obs, p_value
+
+
+def _compute_welch_band_peak(
+    signal: np.ndarray,
+    dt: float,
+    fmin: float,
+    fmax: float,
+    segment_points: int = 256,
+    overlap_frac: float = 0.5,
+    use_hann: bool = True,
+) -> tuple[float, float]:
+    arr = np.asarray(signal, dtype=np.float64)
+    n = arr.size
+    if n < 8 or dt <= 0:
+        return float("nan"), float("nan")
+
+    seg = int(np.clip(segment_points, 8, n))
+    if seg < 8:
+        return float("nan"), float("nan")
+    noverlap = int(np.clip(np.floor(seg * float(overlap_frac)), 0, seg - 1))
+    step = seg - noverlap
+    if step <= 0:
+        step = 1
+
+    starts = np.arange(0, max(1, n - seg + 1), step, dtype=int)
+    if starts.size == 0:
+        starts = np.array([0], dtype=int)
+
+    power_accum: np.ndarray | None = None
+    used_segments = 0
+    for start in starts:
+        end = int(min(n, start + seg))
+        chunk = arr[start:end]
+        if chunk.size < 8:
+            continue
+        centered = chunk - float(np.mean(chunk))
+        if np.allclose(centered, 0.0):
+            continue
+        if use_hann:
+            centered = centered * np.hanning(centered.size)
+        spec = np.fft.rfft(centered)
+        pwr = np.abs(spec) ** 2
+        if power_accum is None:
+            power_accum = np.zeros_like(pwr)
+        min_len = min(power_accum.size, pwr.size)
+        power_accum[:min_len] += pwr[:min_len]
+        used_segments += 1
+
+    if power_accum is None or used_segments == 0:
+        return float("nan"), float("nan")
+
+    power_mean = power_accum / float(used_segments)
+    freqs = np.fft.rfftfreq(seg, d=dt)
+    usable = min(freqs.size, power_mean.size)
+    freqs = freqs[:usable]
+    power_mean = power_mean[:usable]
+
+    mask = (freqs >= fmin) & (freqs <= fmax)
+    if np.any(mask):
+        band_power = power_mean[mask]
+        band_freqs = freqs[mask]
+        idx = int(np.argmax(band_power))
+        return float(band_power[idx]), float(band_freqs[idx])
+
+    if freqs.size < 2:
+        return float("nan"), float("nan")
+    target = 0.5 * (float(fmin) + float(fmax))
+    valid_freqs = freqs[1:]
+    valid_power = power_mean[1:]
+    nearest_idx = int(np.argmin(np.abs(valid_freqs - target)))
+    return float(valid_power[nearest_idx]), float(valid_freqs[nearest_idx])
 
 
 def _detrend_signal(counts: np.ndarray, dt: float, order: int) -> np.ndarray:
@@ -376,6 +474,7 @@ def run_rigor_benchmark(
 
                     f0_est = estimate_qpo_frequency(t, counts)
                     detected_hit = detect_qpo_signal(f0_est, params.f_qpo, config.freq_tolerance_hz)
+                    statistic_mode = "welch" if config.detector_variant == "welch_fft_sig" else "fft"
 
                     t_sig_global, counts_sig_global = _downsample_for_sig(t, counts, max_points=max_points_for_sig)
                     dt_global = float(np.median(np.diff(t_sig_global))) if t_sig_global.size > 1 else float(params.dt)
@@ -394,6 +493,9 @@ def run_rigor_benchmark(
                         fmax=float(config.freq_band_max),
                         n_surrogates=int(config.n_surrogates),
                         rng=np.random.default_rng(seed + 10007 + int(b_value * 10000.0)),
+                        statistic_mode=statistic_mode,
+                        welch_segment_points=int(config.welch_segment_points),
+                        welch_overlap_frac=float(config.welch_overlap_frac),
                     )
 
                     t_win, counts_win = _window_slice(
@@ -423,6 +525,9 @@ def run_rigor_benchmark(
                         fmax=float(config.freq_band_max),
                         n_surrogates=int(config.n_surrogates),
                         rng=np.random.default_rng(seed + 20011 + int(b_value * 10000.0)),
+                        statistic_mode=statistic_mode,
+                        welch_segment_points=int(config.welch_segment_points),
+                        welch_overlap_frac=float(config.welch_overlap_frac),
                     )
 
                     transient_mode = params.qpo_window_start is not None and params.qpo_window_end is not None
@@ -471,6 +576,7 @@ def run_rigor_benchmark(
                             "p_value_window": float(window_p_value) if np.isfinite(window_p_value) else np.nan,
                             "detector_variant": str(config.detector_variant),
                             "detrend_order": int(config.detrend_order),
+                            "peak_statistic": statistic_mode,
                         }
                     )
 
@@ -496,6 +602,7 @@ def run_rigor_benchmark(
             "p_value_window",
             "detector_variant",
             "detrend_order",
+            "peak_statistic",
         ]
     ]
     summary_df = summarize_rigor_results(run_df)
@@ -550,6 +657,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--window-padding-s", type=float, default=10.0)
     parser.add_argument("--detector-variant", default="windowed_fft_sig", choices=list(VALID_DETECTOR_VARIANTS))
     parser.add_argument("--detrend-order", type=int, default=1)
+    parser.add_argument("--welch-segment-points", type=int, default=256)
+    parser.add_argument("--welch-overlap-frac", type=float, default=0.5)
     parser.add_argument("--max-points-for-bb", type=int, default=2000)
     parser.add_argument("--max-points-for-sig", type=int, default=4096)
     parser.add_argument("--skip-paper-update", action="store_true")
@@ -572,6 +681,8 @@ if __name__ == "__main__":
         window_padding_s=args.window_padding_s,
         detector_variant=args.detector_variant,
         detrend_order=args.detrend_order,
+        welch_segment_points=args.welch_segment_points,
+        welch_overlap_frac=args.welch_overlap_frac,
     )
     run_rigor_benchmark(
         config=cfg,

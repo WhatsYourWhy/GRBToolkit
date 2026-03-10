@@ -36,3 +36,16 @@ Recover meaningful true positives while keeping significance-calibrated false po
   - `outputs/sprint4_window_band/candidate_summary.csv`
   - `outputs/sprint4_window_band/best_candidate.csv`
   - `docs/sprint4_window_band_log.md`
+
+## Item 2 Status (March 9, 2026)
+- Full Item 2 run completed with `n_replicates=40` and `n_surrogates=200` using the same benchmark grid.
+- Compared `windowed_fft_sig` baseline vs `welch_fft_sig` under the same phase-randomized surrogate null.
+- Target-group result (`mid` + `boat_drift`):
+  - `delta_score (TPR-FPR) = -0.0153` (worse than baseline)
+  - `delta_tpr = +0.0014`
+  - `delta_fpr = +0.0167`
+- Decision: Item 2 did not improve target-group score; move to Item 3 (transient tiled-window + multiple-testing control).
+- Artifacts:
+  - `outputs/sprint4_welch_compare/welch_comparison.csv`
+  - `outputs/sprint4_welch_compare/welch_decision.csv`
+  - `docs/sprint4_welch_log.md`

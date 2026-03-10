@@ -10,6 +10,7 @@ from grb_refresh import (
     summarize_rigor_results,
 )
 from run_rigor_benchmark import run_rigor_benchmark
+from run_rigor_benchmark import _compute_welch_band_peak
 from run_rigor_benchmark import _detrend_signal
 
 
@@ -89,6 +90,27 @@ def test_detrend_signal_preserves_shape_and_reduces_linear_component():
     assert np.isfinite(detrended).all()
     coeff_after = np.polyfit(x, detrended, deg=1)
     assert abs(coeff_after[0]) < 0.2
+
+
+def test_welch_band_peak_finds_injected_frequency():
+    rng = np.random.default_rng(123)
+    dt = 0.02
+    t = np.arange(0.0, 20.0, dt)
+    f_true = 0.41
+    signal = np.sin(2.0 * np.pi * f_true * t) + 0.2 * rng.normal(0.0, 1.0, size=t.size)
+    peak_power, peak_freq = _compute_welch_band_peak(
+        signal=signal,
+        dt=dt,
+        fmin=0.35,
+        fmax=0.45,
+        segment_points=256,
+        overlap_frac=0.5,
+        use_hann=True,
+    )
+
+    assert np.isfinite(peak_power)
+    assert np.isfinite(peak_freq)
+    assert abs(float(peak_freq) - f_true) <= 0.03
 
 
 def test_summarize_rigor_results_aggregation_and_ci():
@@ -185,6 +207,7 @@ def test_benchmark_runner_smoke_outputs_and_modes(tmp_path):
         "p_value_window",
         "detector_variant",
         "detrend_order",
+        "peak_statistic",
     }
     assert expected_run_cols.issubset(set(run_df.columns))
     assert "recovery_rate_sig" in summary_df.columns
@@ -211,6 +234,7 @@ def test_benchmark_runner_smoke_outputs_and_modes(tmp_path):
     assert run_df[run_df["scenario"] == "short_70"]["detection_mode"].eq("global").all()
     assert run_df["detector_variant"].eq("windowed_fft_sig").all()
     assert run_df["detrend_order"].eq(1).all()
+    assert run_df["peak_statistic"].eq("fft").all()
     assert run_df["p_value"].notna().all()
     assert ((run_df["p_value"] >= 0.0) & (run_df["p_value"] <= 1.0)).all()
 
@@ -281,3 +305,29 @@ def test_benchmark_slice_is_deterministic(tmp_path):
 
     pd.testing.assert_frame_equal(run_a.reset_index(drop=True), run_b.reset_index(drop=True))
     pd.testing.assert_frame_equal(summary_a.reset_index(drop=True), summary_b.reset_index(drop=True))
+
+
+def test_welch_variant_smoke_sets_peak_statistic(tmp_path):
+    cfg = BenchmarkConfig(
+        scenario_names=("short_70",),
+        b_grid=(0.0, 0.3),
+        p0_scale_grid=(1.0,),
+        n_replicates=3,
+        n_surrogates=20,
+        seed_start=230000,
+        detector_variant="welch_fft_sig",
+        welch_segment_points=128,
+        welch_overlap_frac=0.5,
+    )
+
+    run_df, _ = run_rigor_benchmark(
+        config=cfg,
+        output_dir=tmp_path / "outputs",
+        figures_dir=tmp_path / "figures",
+        paper_path=tmp_path / "paper" / "grb_substructure_v2.md",
+        scenario_map={"short_70": _small_scenarios()["short_70"]},
+        max_points_for_bb=300,
+        max_points_for_sig=300,
+    )
+
+    assert run_df["peak_statistic"].eq("welch").all()
