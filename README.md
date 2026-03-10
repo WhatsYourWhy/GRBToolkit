@@ -294,3 +294,4 @@ python run_sprint5_tte_solidify.py --manifest-path docs/sprint5_tte_manifest.csv
 - Detected-fraction heatmap: `figures/sprint5_tte_solidify_detected_fraction.png`
 - Null-calibration heatmap: `figures/sprint5_tte_solidify_null_fpr.png`
 - Sweep log: `docs/sprint5_tte_solidify_log.md`
+- Publication rationale note: `docs/sprint5_publication_rationale.md`
