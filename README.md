@@ -10,6 +10,7 @@ GRBToolkit is a modular signal simulation and analysis suite designed to explore
 ## Quick Navigation
 
 - New here: docs/START_HERE.md
+- Docs map: docs/DOCS_INDEX.md
 - Command catalog: docs/COMMAND_INDEX.md
 - Sprint tracker and decisions: docs/sprint4_candidate_experiments.md
 - Publication rationale: docs/sprint5_publication_rationale.md

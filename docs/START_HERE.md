@@ -47,6 +47,7 @@ GRBToolkit is a reproducible GRB timing-analysis workflow with:
 - `docs/` for run logs, decisions, and rationale notes.
 
 ## Fast Navigation
+- Docs map: `docs/DOCS_INDEX.md`
 - Command catalog: `docs/COMMAND_INDEX.md`
 - Sprint tracker: `docs/sprint4_candidate_experiments.md`
 - Publication rationale: `docs/sprint5_publication_rationale.md`

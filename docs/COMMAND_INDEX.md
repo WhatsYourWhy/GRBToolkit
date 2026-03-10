@@ -1,5 +1,7 @@
 # Command Index
 
+See `docs/DOCS_INDEX.md` for active-vs-archived documentation layout.
+
 ## Environment
 ```bash
 cd /mnt/c/Users/Justin/GRBToolkit
@@ -46,7 +48,7 @@ python run_sprint4_detrend_sweep.py
 ```
 Primary outputs:
 - `outputs/sprint4_*`
-- `docs/sprint4_*_log.md`
+- `docs/sprint4_*_log.md` (top-level pointers; archived full logs in `docs/archive/sprint4_logs/`)
 - `docs/sprint4_stop_pivot_memo.md`
 
 ## Sprint 5 Real-TTE Bridge
