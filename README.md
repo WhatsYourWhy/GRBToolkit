@@ -7,6 +7,15 @@ GRBToolkit is a modular signal simulation and analysis suite designed to explore
 
 ---
 
+## Quick Navigation
+
+- New here: docs/START_HERE.md
+- Command catalog: docs/COMMAND_INDEX.md
+- Sprint tracker and decisions: docs/sprint4_candidate_experiments.md
+- Publication rationale: docs/sprint5_publication_rationale.md
+
+---
+
 ## 📂 Folder Structure
 
 ```
@@ -295,3 +304,7 @@ python run_sprint5_tte_solidify.py --manifest-path docs/sprint5_tte_manifest.csv
 - Null-calibration heatmap: `figures/sprint5_tte_solidify_null_fpr.png`
 - Sweep log: `docs/sprint5_tte_solidify_log.md`
 - Publication rationale note: `docs/sprint5_publication_rationale.md`
+
+
+
+
