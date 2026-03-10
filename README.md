@@ -188,3 +188,20 @@ python run_sprint4_window_band.py
 - Score heatmap: `figures/sprint4_window_band_score.png`
 - Target TPR/FPR plot: `figures/sprint4_window_band_tpr_fpr.png`
 - Run log: `docs/sprint4_window_band_log.md`
+
+### Sprint 4 Item 2 Run (Welch vs Windowed FFT)
+
+```bash
+cd /mnt/c/Users/Justin/GRBToolkit
+source .venv/bin/activate
+python run_sprint4_welch_compare.py
+```
+
+### Sprint 4 Item 2 Artifacts
+
+- Comparison CSV: `outputs/sprint4_welch_compare/welch_comparison.csv`
+- Decision CSV: `outputs/sprint4_welch_compare/welch_decision.csv`
+- Variant run-level CSVs: `outputs/sprint4_welch_compare/run_level_windowed_fft_sig.csv`, `outputs/sprint4_welch_compare/run_level_welch_fft_sig.csv`
+- Variant summary CSVs: `outputs/sprint4_welch_compare/summary_windowed_fft_sig.csv`, `outputs/sprint4_welch_compare/summary_welch_fft_sig.csv`
+- Tradeoff figure: `figures/sprint4_welch_tradeoff.png`
+- Run log: `docs/sprint4_welch_log.md`

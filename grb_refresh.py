@@ -88,6 +88,8 @@ class BenchmarkConfig:
     window_padding_s: float = 10.0
     detector_variant: str = "windowed_fft_sig"
     detrend_order: int = 1
+    welch_segment_points: int = 256
+    welch_overlap_frac: float = 0.5
 
 
 def _coerce_params(params: SimulationParams | Mapping[str, object]) -> SimulationParams:
