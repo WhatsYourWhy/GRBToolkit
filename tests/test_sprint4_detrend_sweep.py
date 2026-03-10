@@ -89,3 +89,57 @@ def test_run_sprint4_detrend_sweep_smoke(tmp_path):
     assert (fig_dir / "sprint4_detrend_tradeoff.png").exists()
     assert (fig_dir / "sprint4_detrend_delta.png").exists()
     assert log_path.exists()
+
+
+def test_run_sprint4_detrend_sweep_resume_reuses_existing_outputs(tmp_path):
+    cfg = BenchmarkConfig(
+        scenario_names=("mid", "boat_drift"),
+        b_grid=(0.0, 0.3),
+        p0_scale_grid=(1.0,),
+        n_replicates=1,
+        n_surrogates=10,
+        alpha=0.05,
+        seed_start=940000,
+    )
+
+    out_dir = tmp_path / "outputs" / "sprint4_detrend_sweep"
+    fig_dir = tmp_path / "figures"
+    log_path = tmp_path / "docs" / "sprint4_detrend_log.md"
+
+    run_sprint4_detrend_sweep(
+        config=cfg,
+        output_dir=out_dir,
+        figures_dir=fig_dir,
+        log_path=log_path,
+        detrend_order_grid=(1,),
+        holdout_seed_offset=10000,
+        min_delta_tpr=0.01,
+        max_fpr_target=0.1,
+        min_delta_score=0.0,
+        scenario_map=_small_scenarios(),
+        max_points_for_bb=240,
+        max_points_for_sig=240,
+    )
+
+    baseline_csv = out_dir / "run_level_train_baseline.csv"
+    candidate_csv = out_dir / "run_level_train_D00.csv"
+    baseline_mtime_before = baseline_csv.stat().st_mtime
+    candidate_mtime_before = candidate_csv.stat().st_mtime
+
+    run_sprint4_detrend_sweep(
+        config=cfg,
+        output_dir=out_dir,
+        figures_dir=fig_dir,
+        log_path=log_path,
+        detrend_order_grid=(1,),
+        holdout_seed_offset=10000,
+        min_delta_tpr=0.01,
+        max_fpr_target=0.1,
+        min_delta_score=0.0,
+        scenario_map=_small_scenarios(),
+        max_points_for_bb=240,
+        max_points_for_sig=240,
+    )
+
+    assert baseline_csv.stat().st_mtime == baseline_mtime_before
+    assert candidate_csv.stat().st_mtime == candidate_mtime_before

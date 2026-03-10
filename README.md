@@ -259,3 +259,21 @@ python run_sprint4_detrend_sweep.py
 - Tradeoff figure: `figures/sprint4_detrend_tradeoff.png`
 - Delta figure: `figures/sprint4_detrend_delta.png`
 - Run log: `docs/sprint4_detrend_log.md`
+- Sprint 4 stop/pivot memo: `docs/sprint4_stop_pivot_memo.md`
+
+### Sprint 5 Item 5 Run (Real-TTE Bridge Pilot)
+
+```bash
+cd /mnt/c/Users/Justin/GRBToolkit
+source .venv/bin/activate
+python run_sprint5_tte_bridge.py --manifest-path docs/sprint5_tte_manifest.csv
+```
+
+### Sprint 5 Item 5 Artifacts
+
+- Burst-level results CSV: `outputs/sprint5_tte_bridge/tte_bridge_results.csv`
+- Pilot summary CSV: `outputs/sprint5_tte_bridge/tte_bridge_summary.csv`
+- p-value figure: `figures/sprint5_tte_pvalues.png`
+- Null-calibration figure: `figures/sprint5_tte_null_calibration.png`
+- Pilot run log: `docs/sprint5_tte_bridge_log.md`
+- Default curated manifest: `docs/sprint5_tte_manifest.csv`
