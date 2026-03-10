@@ -90,6 +90,11 @@ class BenchmarkConfig:
     detrend_order: int = 1
     welch_segment_points: int = 256
     welch_overlap_frac: float = 0.5
+    tile_window_s: float = 60.0
+    tile_step_s: float = 20.0
+    tile_correction_method: str = "bh"
+    tile_min_points: int = 64
+    tile_max_windows: int = 12
 
 
 def _coerce_params(params: SimulationParams | Mapping[str, object]) -> SimulationParams:

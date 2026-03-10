@@ -49,3 +49,43 @@ Recover meaningful true positives while keeping significance-calibrated false po
   - `outputs/sprint4_welch_compare/welch_comparison.csv`
   - `outputs/sprint4_welch_compare/welch_decision.csv`
   - `docs/sprint4_welch_log.md`
+
+## Item 3 Status (March 9, 2026)
+- Full Item 3 run completed with `n_replicates=40` and `n_surrogates=200` on the same benchmark grid.
+- Compared `windowed_fft_sig` baseline vs `tiled_window_fft_sig` (tiled windows + BH multiple-testing correction).
+- Target-group result (`mid` + `boat_drift`):
+  - `delta_score (TPR-FPR) = +0.0042` (improved vs baseline)
+  - `delta_tpr = 0.0000`
+  - `delta_fpr = -0.0042`
+- Interpretation: improvement came from reduced false positives, not higher true-positive recovery in target scenarios.
+- Decision: keep Item 3 path and tune tile policy (window/step/correction) to seek TPR gains while preserving the improved FPR.
+- Artifacts:
+  - `docs/sprint4_tiled_compare/tiled_comparison.csv`
+  - `docs/sprint4_tiled_compare/tiled_decision.csv`
+  - `docs/sprint4_tiled_log.md`
+
+## Item 3 Tuning Sweep Status (March 10, 2026)
+- Added a parameter-sweep runner for tile policy tuning:
+  - tile window, tile step, correction method (BH/Bonferroni), and max tiled windows.
+- Reduced sweep run completed (`n_replicates=5`, `n_surrogates=50`) with 8 candidates.
+- Additional longer run attempts did not change the decision outcome.
+- Result: no candidate achieved positive target-group TPR gain (`best delta_tpr = 0.0`), decision table returned `STOP_OR_PIVOT`.
+- Artifacts:
+  - `docs/sprint4_tiled_tune/tiled_tune_candidates.csv`
+  - `docs/sprint4_tiled_tune/tiled_tune_best.csv`
+  - `docs/sprint4_tiled_tune/tiled_tune_decision.csv`
+  - `docs/sprint4_tiled_tune_log.md`
+
+## Item 4 Status (March 10, 2026)
+- Pivoted to detrending-family evaluation using a dedicated runner with train/holdout seed splits.
+- New runner: `run_sprint4_detrend_sweep.py`
+  - baseline: `windowed_fft_sig`
+  - candidates: `detrended_fft_sig` across configurable polynomial orders
+  - decision gate: holdout delta-TPR, holdout FPR, holdout delta-score, plus train consistency
+- Planned command for full Item 4 pass:
+  - `python run_sprint4_detrend_sweep.py --n-replicates 40 --n-surrogates 200 --detrend-order-grid 1,2,3`
+- Artifacts (Item 4):
+  - `outputs/sprint4_detrend_sweep/detrend_candidate_summary.csv`
+  - `outputs/sprint4_detrend_sweep/detrend_best_candidate.csv`
+  - `outputs/sprint4_detrend_sweep/detrend_decision.csv`
+  - `docs/sprint4_detrend_log.md`

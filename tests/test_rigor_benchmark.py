@@ -10,6 +10,7 @@ from grb_refresh import (
     summarize_rigor_results,
 )
 from run_rigor_benchmark import run_rigor_benchmark
+from run_rigor_benchmark import _adjust_pvalues
 from run_rigor_benchmark import _compute_welch_band_peak
 from run_rigor_benchmark import _detrend_signal
 
@@ -111,6 +112,18 @@ def test_welch_band_peak_finds_injected_frequency():
     assert np.isfinite(peak_power)
     assert np.isfinite(peak_freq)
     assert abs(float(peak_freq) - f_true) <= 0.03
+
+
+def test_adjust_pvalues_bh_and_bonferroni_are_bounded():
+    raw = np.array([0.01, 0.03, 0.2], dtype=np.float64)
+    bh = _adjust_pvalues(raw, method="bh")
+    bonf = _adjust_pvalues(raw, method="bonferroni")
+
+    assert np.all(np.isfinite(bh))
+    assert np.all(np.isfinite(bonf))
+    assert np.all((bh >= 0.0) & (bh <= 1.0))
+    assert np.all((bonf >= 0.0) & (bonf <= 1.0))
+    assert np.all(bonf >= raw)
 
 
 def test_summarize_rigor_results_aggregation_and_ci():
@@ -331,3 +344,36 @@ def test_welch_variant_smoke_sets_peak_statistic(tmp_path):
     )
 
     assert run_df["peak_statistic"].eq("welch").all()
+
+
+def test_tiled_variant_smoke_sets_mode_and_pvalues(tmp_path):
+    cfg = BenchmarkConfig(
+        scenario_names=("boat_transient",),
+        b_grid=(0.0, 0.3),
+        p0_scale_grid=(1.0,),
+        n_replicates=3,
+        n_surrogates=20,
+        seed_start=240000,
+        detector_variant="tiled_window_fft_sig",
+        tile_window_s=2.0,
+        tile_step_s=1.0,
+        tile_correction_method="bh",
+        tile_min_points=32,
+        tile_max_windows=6,
+    )
+
+    run_df, _ = run_rigor_benchmark(
+        config=cfg,
+        output_dir=tmp_path / "outputs",
+        figures_dir=tmp_path / "figures",
+        paper_path=tmp_path / "paper" / "grb_substructure_v2.md",
+        scenario_map={"boat_transient": _small_scenarios()["boat_transient"]},
+        max_points_for_bb=300,
+        max_points_for_sig=300,
+    )
+
+    assert run_df["detection_mode"].eq("tiled").all()
+    assert run_df["peak_statistic"].eq("fft").all()
+    assert run_df["p_value_tiled_adj"].notna().all()
+    assert ((run_df["p_value_tiled_adj"] >= 0.0) & (run_df["p_value_tiled_adj"] <= 1.0)).all()
+    assert run_df["tiled_n_windows"].ge(1).all()

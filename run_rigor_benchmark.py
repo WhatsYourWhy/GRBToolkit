@@ -30,6 +30,7 @@ VALID_DETECTOR_VARIANTS = (
     "windowed_fft_sig",
     "detrended_fft_sig",
     "welch_fft_sig",
+    "tiled_window_fft_sig",
 )
 
 
@@ -152,6 +153,112 @@ def _compute_significance_for_series(
 
     p_value = estimate_surrogate_p_value(peak_power_obs, surrogate_peaks)
     return peak_power_obs, peak_freq_obs, p_value
+
+
+def _adjust_pvalues(p_values: np.ndarray, method: str) -> np.ndarray:
+    vals = np.asarray(p_values, dtype=np.float64)
+    out = np.full(vals.shape, np.nan, dtype=np.float64)
+    finite_mask = np.isfinite(vals)
+    finite_vals = vals[finite_mask]
+    if finite_vals.size == 0:
+        return out
+
+    method_norm = method.strip().lower()
+    if method_norm in {"bonferroni", "fwer"}:
+        adjusted = np.clip(finite_vals * finite_vals.size, 0.0, 1.0)
+        out[finite_mask] = adjusted
+        return out
+    if method_norm not in {"bh", "fdr", "benjamini-hochberg"}:
+        raise ValueError("tile_correction_method must be one of: bh, bonferroni")
+
+    order = np.argsort(finite_vals)
+    ranked = finite_vals[order]
+    m = ranked.size
+    bh = (ranked * m) / np.arange(1, m + 1, dtype=np.float64)
+    bh = np.minimum.accumulate(bh[::-1])[::-1]
+    bh = np.clip(bh, 0.0, 1.0)
+    inv = np.empty_like(order)
+    inv[order] = np.arange(m)
+    out_vals = bh[inv]
+    out[finite_mask] = out_vals
+    return out
+
+
+def _compute_tiled_significance_for_series(
+    counts: np.ndarray,
+    dt: float,
+    fmin: float,
+    fmax: float,
+    n_surrogates: int,
+    rng: np.random.Generator,
+    tile_window_s: float,
+    tile_step_s: float,
+    tile_correction_method: str,
+    tile_min_points: int,
+    tile_max_windows: int,
+    statistic_mode: str,
+    welch_segment_points: int,
+    welch_overlap_frac: float,
+) -> tuple[float, float, float, float, int]:
+    arr = np.asarray(counts, dtype=np.float64)
+    n = arr.size
+    if n < 8 or dt <= 0:
+        return float("nan"), float("nan"), float("nan"), float("nan"), 0
+
+    min_points = int(max(8, tile_min_points))
+    win_points = int(max(min_points, round(float(tile_window_s) / float(dt))))
+    win_points = int(np.clip(win_points, min_points, max(min_points, n)))
+    step_points = int(max(1, round(float(tile_step_s) / float(dt))))
+
+    if n <= win_points:
+        starts = np.array([0], dtype=int)
+    else:
+        starts = np.arange(0, n - win_points + 1, step_points, dtype=int)
+        if starts.size == 0 or starts[-1] != n - win_points:
+            starts = np.unique(np.append(starts, n - win_points))
+
+    max_wins = int(max(1, tile_max_windows))
+    if starts.size > max_wins:
+        idx = np.linspace(0, starts.size - 1, num=max_wins, dtype=int)
+        starts = starts[idx]
+
+    tile_peaks = np.full(starts.size, np.nan, dtype=np.float64)
+    tile_freqs = np.full(starts.size, np.nan, dtype=np.float64)
+    tile_pvals = np.full(starts.size, np.nan, dtype=np.float64)
+
+    for idx, start in enumerate(starts):
+        end = int(min(n, start + win_points))
+        chunk = arr[start:end]
+        if chunk.size < min_points:
+            continue
+        local_rng = np.random.default_rng(int(rng.integers(0, np.iinfo(np.uint32).max)))
+        peak, freq, pval = _compute_significance_for_series(
+            counts=chunk,
+            dt=dt,
+            fmin=fmin,
+            fmax=fmax,
+            n_surrogates=n_surrogates,
+            rng=local_rng,
+            statistic_mode=statistic_mode,
+            welch_segment_points=welch_segment_points,
+            welch_overlap_frac=welch_overlap_frac,
+        )
+        tile_peaks[idx] = peak
+        tile_freqs[idx] = freq
+        tile_pvals[idx] = pval
+
+    finite_mask = np.isfinite(tile_pvals)
+    if not np.any(finite_mask):
+        return float("nan"), float("nan"), float("nan"), float("nan"), int(starts.size)
+
+    adjusted = _adjust_pvalues(tile_pvals, method=tile_correction_method)
+    finite_adj = np.where(np.isfinite(adjusted), adjusted, np.inf)
+    best_idx = int(np.argmin(finite_adj))
+    p_adj_min = float(adjusted[best_idx]) if np.isfinite(adjusted[best_idx]) else float("nan")
+    p_raw_min = float(np.nanmin(tile_pvals)) if np.any(np.isfinite(tile_pvals)) else float("nan")
+    best_peak = float(tile_peaks[best_idx]) if np.isfinite(tile_peaks[best_idx]) else float("nan")
+    best_freq = float(tile_freqs[best_idx]) if np.isfinite(tile_freqs[best_idx]) else float("nan")
+    return best_peak, best_freq, p_adj_min, p_raw_min, int(starts.size)
 
 
 def _compute_welch_band_peak(
@@ -531,11 +638,51 @@ def run_rigor_benchmark(
                     )
 
                     transient_mode = params.qpo_window_start is not None and params.qpo_window_end is not None
+                    tiled_peak = float("nan")
+                    tiled_peak_freq = float("nan")
+                    tiled_p_adj = float("nan")
+                    tiled_p_raw = float("nan")
+                    tiled_n_windows = 0
+                    if config.detector_variant == "tiled_window_fft_sig":
+                        tiled_t = t_win if transient_mode else t
+                        tiled_counts = counts_win if transient_mode else counts
+                        tiled_t_sig, tiled_counts_sig = _downsample_for_sig(
+                            tiled_t,
+                            tiled_counts,
+                            max_points=max_points_for_sig,
+                        )
+                        tiled_dt = (
+                            float(np.median(np.diff(tiled_t_sig)))
+                            if tiled_t_sig.size > 1
+                            else float(params.dt)
+                        )
+                        tiled_peak, tiled_peak_freq, tiled_p_adj, tiled_p_raw, tiled_n_windows = _compute_tiled_significance_for_series(
+                            counts=tiled_counts_sig.astype(np.float64),
+                            dt=tiled_dt,
+                            fmin=float(config.freq_band_min),
+                            fmax=float(config.freq_band_max),
+                            n_surrogates=int(config.n_surrogates),
+                            rng=np.random.default_rng(seed + 30013 + int(b_value * 10000.0)),
+                            tile_window_s=float(config.tile_window_s),
+                            tile_step_s=float(config.tile_step_s),
+                            tile_correction_method=str(config.tile_correction_method),
+                            tile_min_points=int(config.tile_min_points),
+                            tile_max_windows=int(config.tile_max_windows),
+                            statistic_mode="fft",
+                            welch_segment_points=int(config.welch_segment_points),
+                            welch_overlap_frac=float(config.welch_overlap_frac),
+                        )
+
                     if config.detector_variant == "global_tapered_fft_sig":
                         detection_mode = "global"
                         peak_power_obs = global_peak
                         peak_freq_obs = global_peak_freq
                         p_value = global_p_value
+                    elif config.detector_variant == "tiled_window_fft_sig":
+                        detection_mode = "tiled"
+                        peak_power_obs = tiled_peak
+                        peak_freq_obs = tiled_peak_freq
+                        p_value = tiled_p_adj
                     elif transient_mode:
                         detection_mode = "windowed"
                         peak_power_obs = window_peak
@@ -577,6 +724,10 @@ def run_rigor_benchmark(
                             "detector_variant": str(config.detector_variant),
                             "detrend_order": int(config.detrend_order),
                             "peak_statistic": statistic_mode,
+                            "p_value_tiled_adj": float(tiled_p_adj) if np.isfinite(tiled_p_adj) else np.nan,
+                            "p_value_tiled_raw_min": float(tiled_p_raw) if np.isfinite(tiled_p_raw) else np.nan,
+                            "tiled_n_windows": int(tiled_n_windows),
+                            "tile_correction_method": str(config.tile_correction_method),
                         }
                     )
 
@@ -603,6 +754,10 @@ def run_rigor_benchmark(
             "detector_variant",
             "detrend_order",
             "peak_statistic",
+            "p_value_tiled_adj",
+            "p_value_tiled_raw_min",
+            "tiled_n_windows",
+            "tile_correction_method",
         ]
     ]
     summary_df = summarize_rigor_results(run_df)
@@ -659,6 +814,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--detrend-order", type=int, default=1)
     parser.add_argument("--welch-segment-points", type=int, default=256)
     parser.add_argument("--welch-overlap-frac", type=float, default=0.5)
+    parser.add_argument("--tile-window-s", type=float, default=60.0)
+    parser.add_argument("--tile-step-s", type=float, default=20.0)
+    parser.add_argument("--tile-correction-method", default="bh", choices=["bh", "bonferroni"])
+    parser.add_argument("--tile-min-points", type=int, default=64)
+    parser.add_argument("--tile-max-windows", type=int, default=12)
     parser.add_argument("--max-points-for-bb", type=int, default=2000)
     parser.add_argument("--max-points-for-sig", type=int, default=4096)
     parser.add_argument("--skip-paper-update", action="store_true")
@@ -683,6 +843,11 @@ if __name__ == "__main__":
         detrend_order=args.detrend_order,
         welch_segment_points=args.welch_segment_points,
         welch_overlap_frac=args.welch_overlap_frac,
+        tile_window_s=args.tile_window_s,
+        tile_step_s=args.tile_step_s,
+        tile_correction_method=args.tile_correction_method,
+        tile_min_points=args.tile_min_points,
+        tile_max_windows=args.tile_max_windows,
     )
     run_rigor_benchmark(
         config=cfg,
