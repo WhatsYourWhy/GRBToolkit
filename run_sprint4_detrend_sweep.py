@@ -299,23 +299,30 @@ def run_sprint4_detrend_sweep(
     baseline_rows: list[dict[str, object]] = []
 
     for split, seed_start in split_seed_start.items():
+        baseline_run_csv = output_dir / f"run_level_{split}_baseline.csv"
+        baseline_summary_csv = output_dir / f"summary_{split}_baseline.csv"
         baseline_cfg = replace(
             config,
             detector_variant=BASELINE_VARIANT,
             seed_start=int(seed_start),
         )
-        base_run, base_summary = run_rigor_benchmark(
-            config=baseline_cfg,
-            output_dir=output_dir / split / BASELINE_VARIANT,
-            figures_dir=figures_dir / "_sprint4_item4_tmp" / split / BASELINE_VARIANT,
-            paper_path=output_dir / "_scratch_paper.md",
-            scenario_map=scenario_map,
-            max_points_for_bb=max_points_for_bb,
-            max_points_for_sig=max_points_for_sig,
-            update_paper=False,
-        )
-        base_run.to_csv(output_dir / f"run_level_{split}_baseline.csv", index=False)
-        base_summary.to_csv(output_dir / f"summary_{split}_baseline.csv", index=False)
+        if baseline_run_csv.exists() and baseline_summary_csv.exists():
+            base_run = pd.read_csv(baseline_run_csv)
+            base_summary = pd.read_csv(baseline_summary_csv)
+            print(f"[sprint4-detrend] resume: using existing baseline files for split='{split}'")
+        else:
+            base_run, base_summary = run_rigor_benchmark(
+                config=baseline_cfg,
+                output_dir=output_dir / split / BASELINE_VARIANT,
+                figures_dir=figures_dir / "_sprint4_item4_tmp" / split / BASELINE_VARIANT,
+                paper_path=output_dir / "_scratch_paper.md",
+                scenario_map=scenario_map,
+                max_points_for_bb=max_points_for_bb,
+                max_points_for_sig=max_points_for_sig,
+                update_paper=False,
+            )
+            base_run.to_csv(baseline_run_csv, index=False)
+            base_summary.to_csv(baseline_summary_csv, index=False)
 
         base_tpr, base_fpr, base_score, base_pass = _target_metrics(base_summary)
         baseline_rows.append(
@@ -346,24 +353,31 @@ def run_sprint4_detrend_sweep(
 
         for idx, detrend_order in enumerate(detrend_order_grid):
             candidate_id = f"D{idx:02d}"
+            candidate_run_csv = output_dir / f"run_level_{split}_{candidate_id}.csv"
+            candidate_summary_csv = output_dir / f"summary_{split}_{candidate_id}.csv"
             candidate_cfg = replace(
                 config,
                 detector_variant=ITEM4_VARIANT,
                 detrend_order=int(detrend_order),
                 seed_start=int(seed_start),
             )
-            run_df, summary_df = run_rigor_benchmark(
-                config=candidate_cfg,
-                output_dir=output_dir / split / candidate_id,
-                figures_dir=figures_dir / "_sprint4_item4_tmp" / split / candidate_id,
-                paper_path=output_dir / "_scratch_paper.md",
-                scenario_map=scenario_map,
-                max_points_for_bb=max_points_for_bb,
-                max_points_for_sig=max_points_for_sig,
-                update_paper=False,
-            )
-            run_df.to_csv(output_dir / f"run_level_{split}_{candidate_id}.csv", index=False)
-            summary_df.to_csv(output_dir / f"summary_{split}_{candidate_id}.csv", index=False)
+            if candidate_run_csv.exists() and candidate_summary_csv.exists():
+                run_df = pd.read_csv(candidate_run_csv)
+                summary_df = pd.read_csv(candidate_summary_csv)
+                print(f"[sprint4-detrend] resume: using existing candidate files for split='{split}', {candidate_id}")
+            else:
+                run_df, summary_df = run_rigor_benchmark(
+                    config=candidate_cfg,
+                    output_dir=output_dir / split / candidate_id,
+                    figures_dir=figures_dir / "_sprint4_item4_tmp" / split / candidate_id,
+                    paper_path=output_dir / "_scratch_paper.md",
+                    scenario_map=scenario_map,
+                    max_points_for_bb=max_points_for_bb,
+                    max_points_for_sig=max_points_for_sig,
+                    update_paper=False,
+                )
+                run_df.to_csv(candidate_run_csv, index=False)
+                summary_df.to_csv(candidate_summary_csv, index=False)
 
             tpr, fpr, score, passes = _target_metrics(summary_df)
             rows.append(

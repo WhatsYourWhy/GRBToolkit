@@ -89,3 +89,32 @@ Recover meaningful true positives while keeping significance-calibrated false po
   - `outputs/sprint4_detrend_sweep/detrend_best_candidate.csv`
   - `outputs/sprint4_detrend_sweep/detrend_decision.csv`
   - `docs/sprint4_detrend_log.md`
+
+## Sprint 4 Final Status (March 10, 2026)
+- Sprint 4 consolidated outcome: `STOP_OR_PIVOT`.
+- Reason: repeated detector-family adjustments improved calibration in places, but did not produce target-group TPR lift.
+- Final memo:
+  - `docs/sprint4_stop_pivot_memo.md`
+
+## Item 5 Launch Status (March 10, 2026)
+- Pivot path initialized with a real-TTE bridge pilot runner:
+  - `run_sprint5_tte_bridge.py`
+- Curated pilot manifest:
+  - `docs/sprint5_tte_manifest.csv`
+- Purpose: methods-validation portability and p-value calibration reporting on real bursts, without observational overclaiming.
+
+## Item 5 Pilot Status (March 10, 2026)
+- Initial curated real-TTE pilot run completed on 2 bursts from local FITS archive.
+- Summary:
+  - `n_bursts = 2`
+  - `n_detected_sig = 0`
+  - `detected_fraction = 0.0`
+  - `mean_null_empirical_fpr_alpha = 0.03125` at `alpha = 0.05`
+  - `calibration_status = calibrated_or_conservative`
+- Interpretation remains methods-first and conservative.
+- Artifacts:
+  - `outputs/sprint5_tte_bridge/tte_bridge_results.csv`
+  - `outputs/sprint5_tte_bridge/tte_bridge_summary.csv`
+  - `figures/sprint5_tte_pvalues.png`
+  - `figures/sprint5_tte_null_calibration.png`
+  - `docs/sprint5_tte_bridge_log.md`
