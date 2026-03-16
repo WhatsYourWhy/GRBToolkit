@@ -10,6 +10,7 @@ GRBToolkit is a modular signal simulation and analysis suite designed to explore
 ## Quick Navigation
 
 - New here: docs/START_HERE.md
+- Docs map: docs/DOCS_INDEX.md
 - Command catalog: docs/COMMAND_INDEX.md
 - Sprint tracker and decisions: docs/sprint4_candidate_experiments.md
 - Publication rationale: docs/sprint5_publication_rationale.md
@@ -93,7 +94,7 @@ python run_model_compare.py
 
 If you use GRBToolkit, please cite:
 
-> WhatsYourWhy *Detecting Coherent Modulation in GRB Light Curves via QPIX and Time-Frequency Simulation*. WhatsYourWhy (2025). [https://cognisi.io](https://cognisi.io)
+> WhatsYourWhy *Detecting Coherent Modulation in GRB Light Curves via QPIX and Time-Frequency Simulation*. WhatsYourWhy (2025). [https://shankstrategy.com](https://shankstrategy.com)
 
 ---
 
@@ -101,7 +102,7 @@ If you use GRBToolkit, please cite:
 
 
 [WhatsYourWhy](https://whatsyourwhy.example.com)
-[Justin@cognisi.io](mailto:Justin@cognisi.io)
+[Justin@shankstrategy.com](mailto:Justin@shankstrategy.com)
 
 ---
 
