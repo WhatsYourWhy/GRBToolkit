@@ -1,5 +1,5 @@
 
-# GRBToolkit – WhatsYourWhy
+# GRBToolkit – Justin Shank
 
 **Pattern is memory. Noise is a dare.**
 
@@ -94,7 +94,7 @@ python run_model_compare.py
 
 If you use GRBToolkit, please cite:
 
-> WhatsYourWhy *Detecting Coherent Modulation in GRB Light Curves via QPIX and Time-Frequency Simulation*. WhatsYourWhy (2025). [https://shankstrategy.com](https://shankstrategy.com)
+> Justin Shank. *Detecting Coherent Modulation in GRB Light Curves via QPIX and Time-Frequency Simulation*. Justin Shank (2025). [https://shankstrategy.com](https://shankstrategy.com)
 
 ---
 
@@ -104,19 +104,19 @@ If you use GRBToolkit, please cite:
 
 Until the archival DOI is minted, cite the software directly:
 
-> WhatsYourWhy. *GRBToolkit* (Version 1.0.0) [Computer software]. 2025. https://github.com/WhatsYourWhy/GRBToolkit
+> Justin Shank. *GRBToolkit* (Version 1.0.0) [Computer software]. 2025. https://github.com/WhatsYourWhy/GRBToolkit
 
 ### After deposit (with DOI)
 
 Once archived on Zenodo, cite using the minted DOI:
 
-> WhatsYourWhy. *GRBToolkit* (Version 1.0.0) [Computer software]. 2025. [DOI: 10.5281/zenodo.XXXXXXX]
+> Justin Shank. *GRBToolkit* (Version 1.0.0) [Computer software]. 2025. [DOI: 10.5281/zenodo.XXXXXXX]
 
 ### BibTeX
 
 ```bibtex
 @software{whatsyourwhy_grbtoolkit_2025,
-  author  = {WhatsYourWhy},
+  author  = {Shank, Justin},
   title   = {GRBToolkit},
   version = {1.0.0},
   year    = {2025},
@@ -132,7 +132,7 @@ Once archived on Zenodo, cite using the minted DOI:
 ## 👨‍🔬 Author
 
 
-[WhatsYourWhy](https://whatsyourwhy.example.com)
+[WhatsYourWhy](https://github.com/WhatsYourWhy)
 [Justin@shankstrategy.com](mailto:Justin@shankstrategy.com)
 
 ---
