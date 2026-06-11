@@ -11,14 +11,17 @@ def test_run_pipeline_real(tmp_path):
     df = pd.DataFrame({'time': [0.0, 0.5, 1.0], 'signal': [1.0, 2.0, 3.0]})
     df.to_csv(csv_path, index=False)
 
-    run_pipeline(model='real', input_file=str(csv_path), run_wwz=False, seed=123)
-
-    output_file = f"outputs/{csv_path.stem}_signal.csv"
+    original_cwd = os.getcwd()
+    os.chdir(tmp_path)
     try:
+        run_pipeline(model='real', input_file=str(csv_path), run_wwz=False, seed=123)
+
+        output_file = f"outputs/{csv_path.stem}_signal.csv"
         assert os.path.exists(output_file)
     finally:
         if os.path.exists('outputs'):
             shutil.rmtree('outputs')
+        os.chdir(original_cwd)
 
 
 def test_run_pipeline_seed_propagation(tmp_path):

@@ -1,0 +1,12 @@
+{
+  "title": "GRBToolkit",
+  "upload_type": "software",
+  "version": "1.0.0",
+  "license": "MIT",
+  "creators": [
+    {
+      "name": "Shank, Justin",
+      "orcid": "0009-0005-4473-2515"
+    }
+  ]
+}

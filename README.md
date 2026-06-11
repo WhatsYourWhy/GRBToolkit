@@ -98,6 +98,37 @@ If you use GRBToolkit, please cite:
 
 ---
 
+## Citation
+
+### Before deposit (no DOI yet)
+
+Until the archival DOI is minted, cite the software directly:
+
+> WhatsYourWhy. *GRBToolkit* (Version 1.0.0) [Computer software]. 2025. https://github.com/WhatsYourWhy/GRBToolkit
+
+### After deposit (with DOI)
+
+Once archived on Zenodo, cite using the minted DOI:
+
+> WhatsYourWhy. *GRBToolkit* (Version 1.0.0) [Computer software]. 2025. [DOI: 10.5281/zenodo.XXXXXXX]
+
+### BibTeX
+
+```bibtex
+@software{whatsyourwhy_grbtoolkit_2025,
+  author  = {WhatsYourWhy},
+  title   = {GRBToolkit},
+  version = {1.0.0},
+  year    = {2025},
+  url     = {https://github.com/WhatsYourWhy/GRBToolkit},
+  doi     = {10.5281/zenodo.XXXXXXX}
+}
+```
+
+> Note: `10.5281/zenodo.XXXXXXX` is a placeholder. Replace it with the real DOI after the Zenodo deposit is published.
+
+---
+
 ## 👨‍🔬 Author
 
 
@@ -305,7 +336,3 @@ python run_sprint5_tte_solidify.py --manifest-path docs/sprint5_tte_manifest.csv
 - Null-calibration heatmap: `figures/sprint5_tte_solidify_null_fpr.png`
 - Sweep log: `docs/sprint5_tte_solidify_log.md`
 - Publication rationale note: `docs/sprint5_publication_rationale.md`
-
-
-
-
