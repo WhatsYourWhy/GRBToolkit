@@ -110,7 +110,7 @@ Until the archival DOI is minted, cite the software directly:
 
 Once archived on Zenodo, cite using the minted DOI:
 
-> Justin Shank. *GRBToolkit* (Version 1.0.0) [Computer software]. 2025. [DOI: 10.5281/zenodo.XXXXXXX]
+> Justin Shank. *GRBToolkit* (Version 1.0.0) [Computer software]. 2025. [DOI: 10.5281/zenodo.20636990]
 
 ### BibTeX
 
@@ -121,11 +121,10 @@ Once archived on Zenodo, cite using the minted DOI:
   version = {1.0.0},
   year    = {2025},
   url     = {https://github.com/WhatsYourWhy/GRBToolkit},
-  doi     = {10.5281/zenodo.XXXXXXX}
+  doi     = {10.5281/zenodo.20636990}
 }
 ```
 
-> Note: `10.5281/zenodo.XXXXXXX` is a placeholder. Replace it with the real DOI after the Zenodo deposit is published.
 
 ---
 
